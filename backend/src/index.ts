@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import db from './utils/database';
 import testRoutes from './routes/testRoutes';
+import authRoutes from './routes/authRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -30,8 +31,9 @@ const homeHandler: RequestHandler = (req, res) => {
 // Routes
 app.get('/', homeHandler);
 
-// Use test routes
+// API Routes
 app.use('/api/test-db', testRoutes);
+app.use('/api/v1/auth', authRoutes);
 
 // Start server and test database connection
 const startServer = async () => {

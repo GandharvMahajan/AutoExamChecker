@@ -1,42 +1,32 @@
-import { useState, useEffect } from 'react'
-import './App.css'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import Navbar from './components/Navbar';
+import ProtectedRoute from './components/ProtectedRoute';
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+import './App.css';
+import './styles/Auth.css';
 
 function App() {
-  const [message, setMessage] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(true);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch('http://localhost:5002/');
-        const data = await response.json();
-        setMessage(data.message);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        setMessage('Failed to connect to the backend');
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
   return (
-    <div className="container">
-      <h1>AutoExamChecker</h1>
-      <div className="card">
-        {loading ? (
-          <p>Loading...</p>
-        ) : (
-          <p>{message}</p>
-        )}
-      </div>
-      <p className="read-the-docs">
-        A full-stack application for automated exam checking
-      </p>
-    </div>
-  )
+    <AuthProvider>
+      <Router>
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          
+          {/* Protected Routes */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+          </Route>
+        </Routes>
+      </Router>
+    </AuthProvider>
+  );
 }
 
-export default App
+export default App;
