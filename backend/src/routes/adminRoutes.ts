@@ -470,5 +470,6 @@ const getStats: RequestHandler = async (req, res) => {
 };
 
 router.get('/stats', getStats);
+router.get('/dashboard', getStats);
 
 export default router; 

@@ -8,7 +8,7 @@ import { AdminProvider, useAdmin } from './context/AdminContext';
 
 // Protected route component for admin routes
 const ProtectedAdminRoute: React.FC<{ element: React.ReactNode }> = ({ element }) => {
-  const { isAdmin, loading, checkCompleted } = useAdmin();
+  const { isAdmin, loading, adminChecked } = useAdmin();
 
   // Show loading state while checking admin status
   if (loading) {
@@ -16,7 +16,7 @@ const ProtectedAdminRoute: React.FC<{ element: React.ReactNode }> = ({ element }
   }
 
   // If check is completed and user is not admin, redirect to login
-  if (checkCompleted && !isAdmin) {
+  if (adminChecked && !isAdmin) {
     return <Navigate to="/login" replace />;
   }
 

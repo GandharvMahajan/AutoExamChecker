@@ -140,7 +140,7 @@ const handleStripeWebhook = async (req: Request, res: Response) => {
   const sig = req.headers['stripe-signature'] as string;
   
   // Use the webhook secret from the environment or the one provided by the Stripe CLI
-  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET || 'whsec_ed80abbd894e8a88b876d776ef540d119185ea4b284959f3cd613919d11184d0';
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
   
   let event;
 

@@ -42,11 +42,12 @@ export const AdminProvider = ({ children }: AdminProviderProps) => {
       } else if (isAuthenticated && !user?.isAdmin) {
         // User is authenticated but not an admin
         setIsAdmin(false);
-        navigate('/admin/unauthorized');
+        // Redirect to login instead of unauthorized page
+        navigate('/login');
       } else if (!isAuthenticated) {
         // Not authenticated, redirect to login
         setIsAdmin(false);
-        navigate('/admin/login');
+        navigate('/login');
       }
 
       setAdminChecked(true);
@@ -58,7 +59,7 @@ export const AdminProvider = ({ children }: AdminProviderProps) => {
 
   return (
     <AdminContext.Provider value={{ isAdmin, loading, adminChecked }}>
-      {children}
+      {isAdmin || loading ? children : null}
     </AdminContext.Provider>
   );
 };

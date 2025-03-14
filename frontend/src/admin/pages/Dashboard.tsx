@@ -20,7 +20,6 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PersonIcon from '@mui/icons-material/Person';
 import { dashboardService } from '../services/adminApi';
-import { format } from 'date-fns';
 
 interface DashboardStats {
   totalUsers: number;
@@ -94,10 +93,17 @@ const Dashboard: React.FC = () => {
     }
   };
   
-  // Helper function to format date
+  // Helper function to format date using native JavaScript
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'N/A';
-    return format(new Date(dateString), 'MMM dd, yyyy HH:mm');
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
   
   if (loading) {

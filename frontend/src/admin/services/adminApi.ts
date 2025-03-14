@@ -137,7 +137,7 @@ export const dashboardService = {
   // Get dashboard statistics
   getStats: async () => {
     try {
-      const response = await adminApi.get('/dashboard');
+      const response = await adminApi.get('/stats');
       return response.data;
     } catch (error) {
       console.error('Error fetching dashboard statistics:', error);
