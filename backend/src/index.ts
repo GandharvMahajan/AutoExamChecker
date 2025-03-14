@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 import db from './utils/database';
 import testRoutes from './routes/testRoutes';
 import authRoutes from './routes/authRoutes';
+import paymentRoutes from './routes/paymentRoutes';
+import adminRoutes from './routes/adminRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -14,6 +16,11 @@ const PORT = process.env.PORT || 5002;
 
 // Middleware
 app.use(cors());
+
+// For Stripe webhook, we need raw body for signature verification
+app.use('/api/v1/payment/webhook', express.raw({ type: 'application/json' }));
+
+// Use JSON middleware for all other routes
 app.use(express.json());
 
 // Home route handler
@@ -34,6 +41,9 @@ app.get('/', homeHandler);
 // API Routes
 app.use('/api/test-db', testRoutes);
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/payment', paymentRoutes);
+app.use('/api/v1/tests', testRoutes);
+app.use('/api/v1/admin', adminRoutes);
 
 // Start server and test database connection
 const startServer = async () => {

@@ -4,6 +4,8 @@ interface User {
   id: number;
   name: string;
   email: string;
+  testsPurchased?: number;
+  testsUsed?: number;
 }
 
 interface AuthContextType {
@@ -13,6 +15,7 @@ interface AuthContextType {
   loading: boolean;
   login: (token: string, user: User) => void;
   logout: () => void;
+  refreshToken: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,15 +38,29 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
 
+  // Function to validate token - simple validation by checking format 
+  const isTokenValid = (token: string): boolean => {
+    // Check if token is in JWT format (header.payload.signature)
+    const parts = token.split('.');
+    return parts.length === 3;
+  };
+
   useEffect(() => {
     // Check if user is already logged in by looking at localStorage
     const storedToken = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
 
     if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-      setIsAuthenticated(true);
+      // Basic validation of the token format
+      if (isTokenValid(storedToken)) {
+        setToken(storedToken);
+        setUser(JSON.parse(storedUser));
+        setIsAuthenticated(true);
+      } else {
+        // Token is malformed, clear it
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
     }
     
     setLoading(false);
@@ -67,8 +84,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setIsAuthenticated(false);
   };
 
+  // Function to handle token refresh/clear on 401 errors
+  const refreshToken = () => {
+    // For now, just clear the token and force re-login
+    logout();
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, isAuthenticated, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, token, isAuthenticated, loading, login, logout, refreshToken }}>
       {children}
     </AuthContext.Provider>
   );

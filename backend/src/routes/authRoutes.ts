@@ -137,6 +137,9 @@ const login: RequestHandler = async (req, res) => {
         id: user.id,
         name: user.name,
         email: user.email,
+        testsPurchased: user.testsPurchased,
+        testsUsed: user.testsUsed,
+        isAdmin: user.isAdmin
       },
       token,
     });
@@ -149,5 +152,62 @@ const login: RequestHandler = async (req, res) => {
 // Register routes
 router.post('/register', registerValidation, register);
 router.post('/login', loginValidation, login);
+
+// Special route to set up the first admin (only works when no admins exist)
+const setupFirstAdmin: RequestHandler = async (req, res) => {
+  try {
+    const { email, adminKey } = req.body;
+    
+    // Verify admin setup key from environment
+    const expectedAdminKey = process.env.ADMIN_SETUP_KEY || 'admin-setup-secret-key';
+    if (adminKey !== expectedAdminKey) {
+      res.status(403).json({ message: 'Invalid admin setup key' });
+      return;
+    }
+    
+    // Check if any admin already exists
+    const existingAdmin = await prisma.user.findFirst({
+      where: { isAdmin: true }
+    });
+    
+    if (existingAdmin) {
+      res.status(400).json({ message: 'An admin user already exists' });
+      return;
+    }
+    
+    // Find user by email
+    const user = await prisma.user.findUnique({
+      where: { email }
+    });
+    
+    if (!user) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+    
+    // Make user an admin
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: { isAdmin: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        isAdmin: true
+      }
+    });
+    
+    res.status(200).json({
+      success: true,
+      message: 'First admin user set up successfully',
+      user: updatedUser
+    });
+  } catch (error) {
+    console.error('Error setting up admin:', error);
+    res.status(500).json({ message: 'Server error setting up admin' });
+  }
+};
+
+router.post('/setup-first-admin', setupFirstAdmin);
 
 export default router; 

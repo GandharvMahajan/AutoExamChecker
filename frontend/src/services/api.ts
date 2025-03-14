@@ -24,6 +24,34 @@ api.interceptors.request.use(
   }
 );
 
+// Add response interceptor to handle auth errors
+api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    // Handle 401 errors globally, but be selective about token clearing
+    if (error.response && error.response.status === 401) {
+      // Check if the error message specifically indicates an invalid token
+      // Only clear token for specific token validation failures, not all 401 errors
+      if (error.response.data && 
+          (error.response.data.message === 'Token is not valid' || 
+          error.response.data.message === 'Token has expired')) {
+        
+        console.warn('Invalid token detected, clearing authentication data');
+        
+        // Clear auth data from localStorage
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        
+        // You could redirect to login page here, but that's better handled 
+        // by the components using the useAuth hook's refreshToken function
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Authentication service
 export const authService = {
   // Register user

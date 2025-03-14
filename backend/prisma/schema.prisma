@@ -20,10 +20,48 @@ model Test {
 
 // User model for authentication
 model User {
-  id           Int      @id @default(autoincrement())
-  name         String
-  email        String   @unique
-  passwordHash String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id             Int         @id @default(autoincrement())
+  name           String
+  email          String      @unique
+  passwordHash   String
+  testsPurchased Int         @default(0)  // Number of tests purchased by the user
+  testsUsed      Int         @default(0)  // Number of tests used by the user
+  isAdmin        Boolean     @default(false) // Flag to identify admin users
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  userTests      UserTest[]  // Relation to UserTest
+}
+
+// Academic test model for the actual tests users can take
+model ExamTest {
+  id            Int         @id @default(autoincrement())
+  title         String
+  subject       String
+  description   String?
+  totalMarks    Int
+  passingMarks  Int
+  duration      Int         // Duration in minutes
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  userTests     UserTest[]  // Relation to UserTest
+}
+
+// UserTest model to track the relationship between users and tests
+model UserTest {
+  id            Int         @id @default(autoincrement())
+  userId        Int
+  testId        Int
+  status        String      // NotStarted, InProgress, Completed
+  score         Int?        // Null until completed
+  startedAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  // Relations
+  user          User        @relation(fields: [userId], references: [id])
+  test          ExamTest    @relation(fields: [testId], references: [id])
+  
+  // Unique constraint to ensure a user can only have one entry per test
+  @@unique([userId, testId])
 }
