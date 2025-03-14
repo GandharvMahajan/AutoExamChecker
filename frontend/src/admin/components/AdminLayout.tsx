@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   AppBar, 
   Box, 
@@ -27,7 +27,11 @@ import { useAuth } from '../../context/AuthContext';
 
 const drawerWidth = 240;
 
-const AdminLayout: React.FC = () => {
+interface AdminLayoutProps {
+  children: React.ReactNode;
+}
+
+const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -204,7 +208,7 @@ const AdminLayout: React.FC = () => {
         }}
       >
         <Toolbar /> {/* Adds space for the AppBar */}
-        <Outlet />
+        {children}
       </Box>
     </Box>
   );

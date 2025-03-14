@@ -70,14 +70,20 @@ const Users: React.FC = () => {
       setLoading(true);
       setError(null);
       
+      console.log('Fetching users...');
       const response = await userService.getAllUsers();
+      console.log('Users API response:', response);
       
-      if (response.success) {
-        setUsers(response.users);
+      if (response && response.success) {
+        console.log('Setting users data:', response.users);
+        setUsers(response.users || []);
+      } else {
+        console.error('API response was successful but missing data');
+        setError('Failed to load users: Missing data in response');
       }
     } catch (err) {
       console.error('Error fetching users:', err);
-      setError('Failed to load users');
+      setError('Failed to load users: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setLoading(false);
     }

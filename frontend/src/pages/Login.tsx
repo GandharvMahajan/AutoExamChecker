@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { authService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
   
   const [formData, setFormData] = useState({
@@ -14,8 +15,16 @@ const Login = () => {
   
   const [errors, setErrors] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
   
   const { email, password } = formData;
+
+  // Check for message from location state (e.g., from payment redirect)
+  useEffect(() => {
+    if (location.state && location.state.message) {
+      setMessage(location.state.message);
+    }
+  }, [location.state]);
   
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -55,7 +64,22 @@ const Login = () => {
     try {
       const result = await authService.login(email, password);
       login(result.token, result.user);
-      navigate('/dashboard');
+      
+      // Check if there's a pending payment to process
+      const pendingPayment = localStorage.getItem('pendingPayment');
+      if (pendingPayment) {
+        // Clear the pending payment from localStorage
+        localStorage.removeItem('pendingPayment');
+        
+        // Parse the pending payment data
+        const { sessionId, plan } = JSON.parse(pendingPayment);
+        
+        // Redirect to payment success page with the session ID and plan
+        navigate(`/payment-success?session_id=${sessionId}&plan=${plan}`);
+      } else {
+        // If no pending payment, redirect to dashboard
+        navigate(location.state?.from || '/dashboard');
+      }
     } catch (error) {
       if (error instanceof Error) {
         setErrors([error.message]);
@@ -81,6 +105,12 @@ const Login = () => {
     <div className="auth-container">
       <div className="auth-form-container">
         <h2>Login</h2>
+        
+        {message && (
+          <div className="info-container">
+            <p className="info-text">{message}</p>
+          </div>
+        )}
         
         {errors.length > 0 && (
           <div className="error-container">

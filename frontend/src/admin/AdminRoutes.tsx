@@ -10,6 +10,9 @@ import { AdminProvider, useAdmin } from './context/AdminContext';
 const ProtectedAdminRoute: React.FC<{ element: React.ReactNode }> = ({ element }) => {
   const { isAdmin, loading, adminChecked } = useAdmin();
 
+  // For debugging
+  console.log('ProtectedAdminRoute:', { isAdmin, loading, adminChecked });
+
   // Show loading state while checking admin status
   if (loading) {
     return <div>Loading...</div>;
@@ -29,24 +32,35 @@ const AdminRoutesWithProvider: React.FC = () => {
   return (
     <AdminProvider>
       <Routes>
-        <Route 
-          path="/*" 
-          element={
-            <ProtectedAdminRoute
-              element={
-                <AdminLayout>
-                  <Routes>
-                    <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/tests" element={<Tests />} />
-                    <Route path="/users" element={<Users />} />
-                    <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
-                  </Routes>
-                </AdminLayout>
-              }
-            />
-          }
-        />
+        <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="/dashboard" element={
+          <ProtectedAdminRoute
+            element={
+              <AdminLayout>
+                <Dashboard />
+              </AdminLayout>
+            }
+          />
+        } />
+        <Route path="/tests" element={
+          <ProtectedAdminRoute
+            element={
+              <AdminLayout>
+                <Tests />
+              </AdminLayout>
+            }
+          />
+        } />
+        <Route path="/users" element={
+          <ProtectedAdminRoute
+            element={
+              <AdminLayout>
+                <Users />
+              </AdminLayout>
+            }
+          />
+        } />
+        <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
       </Routes>
     </AdminProvider>
   );

@@ -65,16 +65,26 @@ const Dashboard: React.FC = () => {
         setLoading(true);
         setError(null);
         
+        console.log('Fetching dashboard data...');
         const response = await dashboardService.getStats();
+        console.log('Dashboard API response:', response);
         
-        if (response.success) {
+        if (response && response.success) {
+          console.log('Setting dashboard data:', {
+            stats: response.stats,
+            recentUsers: response.recentUsers,
+            recentTestAttempts: response.recentTestAttempts
+          });
           setStats(response.stats);
-          setRecentUsers(response.recentUsers);
-          setRecentTestAttempts(response.recentTestAttempts);
+          setRecentUsers(response.recentUsers || []);
+          setRecentTestAttempts(response.recentTestAttempts || []);
+        } else {
+          console.error('API response was successful but missing data');
+          setError('Failed to load dashboard data: Missing data in response');
         }
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
-        setError('Failed to load dashboard data');
+        setError('Failed to load dashboard data: ' + (err instanceof Error ? err.message : String(err)));
       } finally {
         setLoading(false);
       }

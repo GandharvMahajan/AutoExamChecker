@@ -1,19 +1,10 @@
 import { PrismaClient } from '@prisma/client';
 import { withAccelerate } from '@prisma/extension-accelerate';
 
-// Create interface for our test model to use in mock
-interface TestModel {
-  id: number;
-  name: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 // Class to handle database operations with mock support
 class Database {
   // Updated to use any type to avoid TypeScript issues with the extended client
   private prisma: any = null;
-  private mockData: TestModel[] = [];
   private isConnected: boolean = false;
   private usesMock: boolean = false;
 
@@ -42,18 +33,10 @@ class Database {
 
   private setupMockData() {
     this.usesMock = true;
-    this.mockData = [
-      { 
-        id: 1, 
-        name: 'Mock Test Data', 
-        createdAt: new Date(), 
-        updatedAt: new Date() 
-      }
-    ];
     console.log('Using mock database implementation');
   }
 
-  // Test the database connection
+  // Test the database connection without creating test records
   async testConnection(): Promise<boolean> {
     if (this.usesMock) {
       console.log('Using mock database - no actual connection test needed');
@@ -66,15 +49,11 @@ class Database {
         throw new Error('Prisma client not initialized');
       }
 
-      // Test connection by creating a test record
-      const test = await this.prisma.test.create({
-        data: {
-          name: 'Test Connection',
-        },
-      });
+      // Test connection by querying user count - doesn't create any records
+      const userCount = await this.prisma.user.count();
       
       console.log('Database connection successful!');
-      console.log('Created test record:', test);
+      console.log(`Database contains ${userCount} users`);
       
       this.isConnected = true;
       return true;
@@ -86,63 +65,6 @@ class Database {
       this.setupMockData();
       this.isConnected = false;
       return false;
-    }
-  }
-
-  // Methods for the test model
-  async findManyTests(): Promise<TestModel[]> {
-    if (this.usesMock) {
-      return [...this.mockData];
-    }
-
-    try {
-      if (!this.prisma) {
-        throw new Error('Prisma client not initialized');
-      }
-      return await this.prisma.test.findMany();
-    } catch (error) {
-      console.error('Error in findManyTests:', error);
-      // Fallback to mock data on error
-      if (!this.usesMock) {
-        this.setupMockData();
-      }
-      return [...this.mockData];
-    }
-  }
-
-  async createTest(name: string): Promise<TestModel> {
-    if (this.usesMock) {
-      const newTest = {
-        id: this.mockData.length + 1,
-        name,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      this.mockData.push(newTest);
-      return newTest;
-    }
-
-    try {
-      if (!this.prisma) {
-        throw new Error('Prisma client not initialized');
-      }
-      return await this.prisma.test.create({
-        data: { name }
-      });
-    } catch (error) {
-      console.error('Error in createTest:', error);
-      // Fallback to mock data on error
-      if (!this.usesMock) {
-        this.setupMockData();
-      }
-      const newTest = {
-        id: this.mockData.length + 1,
-        name,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      this.mockData.push(newTest);
-      return newTest;
     }
   }
 

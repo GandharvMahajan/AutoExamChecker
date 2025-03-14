@@ -38,14 +38,17 @@ export const AdminProvider = ({ children }: AdminProviderProps) => {
 
       // Check if user is authenticated and is admin
       if (isAuthenticated && user?.isAdmin) {
+        console.log('User is admin:', user);
         setIsAdmin(true);
       } else if (isAuthenticated && !user?.isAdmin) {
         // User is authenticated but not an admin
+        console.log('User is not admin:', user);
         setIsAdmin(false);
         // Redirect to login instead of unauthorized page
         navigate('/login');
       } else if (!isAuthenticated) {
         // Not authenticated, redirect to login
+        console.log('User is not authenticated');
         setIsAdmin(false);
         navigate('/login');
       }
@@ -57,9 +60,12 @@ export const AdminProvider = ({ children }: AdminProviderProps) => {
     checkAdmin();
   }, [user, isAuthenticated, authLoading, navigate]);
 
+  // For debugging
+  console.log('AdminContext state:', { isAdmin, loading, adminChecked, user });
+
   return (
     <AdminContext.Provider value={{ isAdmin, loading, adminChecked }}>
-      {isAdmin || loading ? children : null}
+      {(isAdmin || loading) ? children : null}
     </AdminContext.Provider>
   );
 };

@@ -1,6 +1,6 @@
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Button, Typography, Box, Paper, Grid, Card, CardContent, LinearProgress, CircularProgress, Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Stack, Alert } from '@mui/material';
+import { Button, Typography, Box, Paper, Grid, Card, CardContent, LinearProgress, CircularProgress, Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Stack, Alert, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent } from '@mui/material';
 import { Link } from 'react-router-dom';
 import { useCredits } from '../hooks/useCredits';
 import { IS_DEVELOPMENT, API_BASE_URL } from '../config/constants';
@@ -12,6 +12,7 @@ interface Test {
   id: number;
   title: string;
   subject: string;
+  userClass: string | null;
   description: string | null;
   totalMarks: number;
   passingMarks: number;
@@ -20,6 +21,7 @@ interface Test {
   score: number | null;
   startedAt: string | null;
   completedAt: string | null;
+  maxScore?: number; // Add optional maxScore field
 }
 
 const Dashboard = () => {
@@ -27,8 +29,13 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { testsPurchased, testsUsed, loading: creditsLoading, error: creditsError, refreshCredits } = useCredits();
   const [tests, setTests] = useState<Test[]>([]);
+  const [filteredTests, setFilteredTests] = useState<Test[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [subjectFilter, setSubjectFilter] = useState<string>('');
+  const [classFilter, setClassFilter] = useState<string>('');
+  const [availableSubjects, setAvailableSubjects] = useState<string[]>([]);
+  const [availableClasses, setAvailableClasses] = useState<string[]>([]);
   
   // Calculate usage percentage
   const testsRemaining = testsPurchased - testsUsed;
@@ -53,7 +60,46 @@ const Dashboard = () => {
         });
         
         if (response.data.success) {
-          setTests(response.data.tests);
+          // Log the entire API response to see its structure
+          console.log('Full API response:', JSON.stringify(response.data));
+          
+          // Debug: Log the first test to examine its structure
+          console.log('First test data:', JSON.stringify(response.data.tests[0]));
+          
+          // Map the response data to ensure userClass field is properly handled
+          const mappedTests = response.data.tests.map((test: any) => {
+            // Log the entire test object to see its structure
+            console.log(`Full test object for ID ${test.id}:`, JSON.stringify(test));
+            
+            // Force conversion to a number and then to string to handle different formats
+            let classValue;
+            try {
+              classValue = test.class !== undefined ? String(test.class) : '';
+              console.log(`Class value for test ${test.id}:`, classValue);
+            } catch (e) {
+              console.error(`Error processing class for test ${test.id}:`, e);
+              classValue = '';
+            }
+            
+            // Return a new object with the correct mapping
+            return {
+              ...test,
+              // Set userClass explicitly with proper conversion
+              userClass: classValue
+            } as Test;
+          });
+          
+          console.log('Mapped tests with userClass:', mappedTests.map((t: Test) => ({ id: t.id, userClass: t.userClass })));
+          
+          setTests(mappedTests);
+          setFilteredTests(mappedTests);
+          
+          // Extract unique subjects and classes for filters
+          const uniqueSubjects = [...new Set(mappedTests.map((test: Test) => test.subject))] as string[];
+          const uniqueClasses = [...new Set(mappedTests.map((test: Test) => test.userClass).filter(Boolean) as string[])];
+          
+          setAvailableSubjects(uniqueSubjects);
+          setAvailableClasses(uniqueClasses);
         } else {
           setError('Failed to fetch tests');
         }
@@ -77,6 +123,35 @@ const Dashboard = () => {
     
     fetchUserTests();
   }, [token, navigate, refreshToken]);
+  
+  // Apply filters when filter values change
+  useEffect(() => {
+    let result = [...tests];
+    
+    if (subjectFilter) {
+      result = result.filter(test => test.subject === subjectFilter);
+    }
+    
+    if (classFilter) {
+      result = result.filter(test => String(test.userClass) === classFilter);
+    }
+    
+    setFilteredTests(result);
+  }, [tests, subjectFilter, classFilter]);
+  
+  // Handle filter changes
+  const handleSubjectFilterChange = (event: SelectChangeEvent) => {
+    setSubjectFilter(event.target.value);
+  };
+  
+  const handleClassFilterChange = (event: SelectChangeEvent) => {
+    setClassFilter(event.target.value);
+  };
+  
+  const clearFilters = () => {
+    setSubjectFilter('');
+    setClassFilter('');
+  };
   
   const handleLogout = () => {
     logout();
@@ -261,41 +336,87 @@ const Dashboard = () => {
       
       <Paper elevation={3} sx={{ p: 3 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="h6">Your Tests</Typography>
+          <Typography variant="h6">Available Tests</Typography>
           <Button size="small" onClick={() => window.location.reload()}>
             Refresh
           </Button>
+        </Box>
+        
+        {/* Filters */}
+        <Box display="flex" gap={2} mb={3}>
+          <FormControl size="small" sx={{ minWidth: 200 }}>
+            <InputLabel id="subject-filter-label">Filter by Subject</InputLabel>
+            <Select
+              labelId="subject-filter-label"
+              id="subject-filter"
+              value={subjectFilter}
+              label="Filter by Subject"
+              onChange={handleSubjectFilterChange}
+            >
+              <MenuItem value="">
+                <em>All Subjects</em>
+              </MenuItem>
+              {availableSubjects.map(subject => (
+                <MenuItem key={subject} value={subject}>{subject}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          
+          <FormControl size="small" sx={{ minWidth: 200 }}>
+            <InputLabel id="class-filter-label">Filter by Class</InputLabel>
+            <Select
+              labelId="class-filter-label"
+              id="class-filter"
+              value={classFilter}
+              label="Filter by Class"
+              onChange={handleClassFilterChange}
+            >
+              <MenuItem value="">
+                <em>All Classes</em>
+              </MenuItem>
+              {availableClasses.map(cls => (
+                <MenuItem key={cls} value={cls}>{cls}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          
+          {(subjectFilter || classFilter) && (
+            <Button size="small" onClick={clearFilters}>
+              Clear Filters
+            </Button>
+          )}
         </Box>
         
         {loading ? (
           <Box display="flex" justifyContent="center" p={3}>
             <CircularProgress />
           </Box>
-        ) : tests.length > 0 ? (
+        ) : filteredTests.length > 0 ? (
           <TableContainer>
             <Table>
               <TableHead>
                 <TableRow>
                   <TableCell>Test Name</TableCell>
                   <TableCell>Subject</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Score</TableCell>
+                  <TableCell>Class</TableCell>
+                  <TableCell>Maximum Score</TableCell>
                   <TableCell>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {tests.map((test) => (
+                {filteredTests.map((test) => (
                   <TableRow key={test.id}>
                     <TableCell>{test.title}</TableCell>
                     <TableCell>{test.subject}</TableCell>
                     <TableCell>
-                      <Chip 
-                        label={test.status} 
-                        color={getStatusColor(test.status) as "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning"} 
-                        size="small" 
-                      />
+                      {/* Always display a class value, even if it's 0 */}
+                      {test.userClass !== undefined && test.userClass !== null && test.userClass !== '' 
+                        ? test.userClass 
+                        : (test as any).class !== undefined && (test as any).class !== null 
+                          ? String((test as any).class) 
+                          : '0'}
                     </TableCell>
-                    <TableCell>{test.score !== null ? `${test.score}/${test.totalMarks}` : '-'}</TableCell>
+                    <TableCell>{test.maxScore || test.totalMarks}</TableCell>
                     <TableCell>
                       <Stack direction="row" spacing={1}>
                         {test.status === 'NotStarted' && (
@@ -335,7 +456,7 @@ const Dashboard = () => {
           </TableContainer>
         ) : (
           <Typography variant="body2" sx={{ py: 2 }}>
-            No tests available. Please check back later or contact support.
+            {tests.length > 0 ? 'No tests match the selected filters.' : 'No tests available. Please check back later or contact support.'}
           </Typography>
         )}
       </Paper>

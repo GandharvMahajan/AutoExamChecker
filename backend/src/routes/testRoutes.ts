@@ -16,7 +16,8 @@ const sampleTests = [
     description: 'Basic algebra and calculus concepts',
     totalMarks: 100,
     passingMarks: 40,
-    duration: 120 // 2 hours
+    duration: 120, // 2 hours
+    class: 10
   },
   {
     title: 'Physics Fundamentals',
@@ -24,7 +25,8 @@ const sampleTests = [
     description: 'Mechanics and electromagnetism',
     totalMarks: 100,
     passingMarks: 40,
-    duration: 120
+    duration: 120,
+    class: 11
   },
   {
     title: 'Computer Science Basics',
@@ -32,7 +34,8 @@ const sampleTests = [
     description: 'Algorithms and data structures',
     totalMarks: 100,
     passingMarks: 40,
-    duration: 120
+    duration: 120,
+    class: 12
   }
 ];
 
@@ -57,6 +60,40 @@ const seedTests = async () => {
 seedTests().catch(error => {
   console.error('Error seeding tests:', error);
 });
+
+// Add a type for test with class
+interface TestWithClass {
+  id: number;
+  title: string;
+  subject: string;
+  class: number;
+  description: string | null;
+  totalMarks: number;
+  passingMarks: number;
+  duration: number;
+  status: 'NotStarted' | 'InProgress' | 'Completed';
+  score: number | null;
+  startedAt: Date | null;
+  completedAt: Date | null;
+}
+
+// Function to convert a raw test to a test with class
+const createTestWithClass = (test: any, userTest: any | null): TestWithClass => {
+  return {
+    id: test.id,
+    title: test.title,
+    subject: test.subject,
+    class: test.class || 0, // Default to 0 if class doesn't exist
+    description: test.description,
+    totalMarks: test.totalMarks,
+    passingMarks: test.passingMarks,
+    duration: test.duration,
+    status: userTest ? userTest.status : 'NotStarted',
+    score: userTest ? userTest.score : null,
+    startedAt: userTest ? userTest.startedAt : null,
+    completedAt: userTest ? userTest.completedAt : null
+  };
+};
 
 // Register routes with @ts-ignore to bypass TypeScript errors
 // @ts-ignore
@@ -125,21 +162,13 @@ router.get('/userTests', auth, async (req: Request, res: Response) => {
     // Combine the data
     const testsWithStatus = availableTests.map(test => {
       const userTest = userTestMap.get(test.id);
-      
-      return {
-        id: test.id,
-        title: test.title,
-        subject: test.subject,
-        description: test.description,
-        totalMarks: test.totalMarks,
-        passingMarks: test.passingMarks,
-        duration: test.duration,
-        status: userTest ? userTest.status : 'NotStarted',
-        score: userTest ? userTest.score : null,
-        startedAt: userTest ? userTest.startedAt : null,
-        completedAt: userTest ? userTest.completedAt : null
-      };
+      return createTestWithClass(test, userTest);
     });
+
+    // Log the first test to check if class is included
+    if (testsWithStatus.length > 0) {
+      console.log('First test with class value:', JSON.stringify(testsWithStatus[0]));
+    }
 
     res.status(200).json({
       success: true,
@@ -258,28 +287,14 @@ router.post('/start', auth, async (req: Request, res: Response) => {
 // Simple database connectivity test endpoint
 router.get('/db-check', async (req: Request, res: Response) => {
   try {
-    const testEntry = await prisma.test.findFirst();
+    // Use user count instead of Test model
+    const userCount = await prisma.user.count();
     
-    if (testEntry) {
-      res.status(200).json({ 
-        success: true, 
-        message: 'Database connection successful', 
-        data: testEntry 
-      });
-    } else {
-      // Create a test entry if none exists
-      const newTest = await prisma.test.create({
-        data: {
-          name: 'Test Entry'
-        }
-      });
-
-      res.status(200).json({ 
-        success: true, 
-        message: 'Database connection successful, created new test entry', 
-        data: newTest
-      });
-    }
+    res.status(200).json({ 
+      success: true, 
+      message: 'Database connection successful', 
+      data: { userCount }
+    });
   } catch (error) {
     console.error('Database connection error:', error);
     res.status(500).json({ 

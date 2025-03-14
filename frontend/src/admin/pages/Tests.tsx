@@ -36,6 +36,7 @@ interface Test {
   totalMarks: number;
   passingMarks: number;
   duration: number;
+  class: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -47,6 +48,7 @@ interface TestFormData {
   totalMarks: number;
   passingMarks: number;
   duration: number;
+  class: number;
 }
 
 const initialFormData: TestFormData = {
@@ -55,7 +57,8 @@ const initialFormData: TestFormData = {
   description: '',
   totalMarks: 100,
   passingMarks: 40,
-  duration: 120
+  duration: 120,
+  class: 10
 };
 
 const Tests: React.FC = () => {
@@ -116,7 +119,7 @@ const Tests: React.FC = () => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: name === 'totalMarks' || name === 'passingMarks' || name === 'duration' 
+      [name]: name === 'totalMarks' || name === 'passingMarks' || name === 'duration' || name === 'class' 
         ? parseInt(value) || 0 
         : value
     });
@@ -158,6 +161,10 @@ const Tests: React.FC = () => {
       errors.duration = 'Duration must be greater than 0';
     }
     
+    if (formData.class < 1 || formData.class > 12) {
+      errors.class = 'Class must be between 1 and 12';
+    }
+    
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -181,7 +188,8 @@ const Tests: React.FC = () => {
       description: test.description || '',
       totalMarks: test.totalMarks,
       passingMarks: test.passingMarks,
-      duration: test.duration
+      duration: test.duration,
+      class: test.class
     });
     setValidationErrors({});
     setOpenEditDialog(true);
@@ -320,6 +328,7 @@ const Tests: React.FC = () => {
                 <TableCell>ID</TableCell>
                 <TableCell>Title</TableCell>
                 <TableCell>Subject</TableCell>
+                <TableCell>Class</TableCell>
                 <TableCell>Total Marks</TableCell>
                 <TableCell>Passing Marks</TableCell>
                 <TableCell>Duration (min)</TableCell>
@@ -327,32 +336,34 @@ const Tests: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {tests
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((test) => (
-                  <TableRow key={test.id}>
-                    <TableCell>{test.id}</TableCell>
-                    <TableCell>{test.title}</TableCell>
-                    <TableCell>{test.subject}</TableCell>
-                    <TableCell>{test.totalMarks}</TableCell>
-                    <TableCell>{test.passingMarks}</TableCell>
-                    <TableCell>{test.duration}</TableCell>
-                    <TableCell align="right">
-                      <IconButton
-                        color="primary"
-                        onClick={() => handleOpenEditDialog(test)}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
-                        color="error"
-                        onClick={() => handleOpenDeleteDialog(test)}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
+              {(rowsPerPage > 0
+                ? tests.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                : tests
+              ).map((test) => (
+                <TableRow key={test.id}>
+                  <TableCell>{test.id}</TableCell>
+                  <TableCell>{test.title}</TableCell>
+                  <TableCell>{test.subject}</TableCell>
+                  <TableCell>{test.class}</TableCell>
+                  <TableCell>{test.totalMarks}</TableCell>
+                  <TableCell>{test.passingMarks}</TableCell>
+                  <TableCell>{test.duration}</TableCell>
+                  <TableCell align="right">
+                    <IconButton
+                      color="primary"
+                      onClick={() => handleOpenEditDialog(test)}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      color="error"
+                      onClick={() => handleOpenDeleteDialog(test)}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
               {tests.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={7} align="center">
@@ -414,7 +425,21 @@ const Tests: React.FC = () => {
                 onChange={handleInputChange}
               />
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={3}>
+              <TextField
+                name="class"
+                label="Class (1-12)"
+                type="number"
+                fullWidth
+                value={formData.class}
+                onChange={handleInputChange}
+                error={!!validationErrors.class}
+                helperText={validationErrors.class}
+                required
+                inputProps={{ min: 1, max: 12 }}
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
               <TextField
                 name="totalMarks"
                 label="Total Marks"
@@ -427,7 +452,7 @@ const Tests: React.FC = () => {
                 required
               />
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={3}>
               <TextField
                 name="passingMarks"
                 label="Passing Marks"
@@ -440,7 +465,7 @@ const Tests: React.FC = () => {
                 required
               />
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={3}>
               <TextField
                 name="duration"
                 label="Duration (minutes)"
@@ -503,7 +528,21 @@ const Tests: React.FC = () => {
                 onChange={handleInputChange}
               />
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={3}>
+              <TextField
+                name="class"
+                label="Class (1-12)"
+                type="number"
+                fullWidth
+                value={formData.class}
+                onChange={handleInputChange}
+                error={!!validationErrors.class}
+                helperText={validationErrors.class}
+                required
+                inputProps={{ min: 1, max: 12 }}
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
               <TextField
                 name="totalMarks"
                 label="Total Marks"
@@ -516,7 +555,7 @@ const Tests: React.FC = () => {
                 required
               />
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={3}>
               <TextField
                 name="passingMarks"
                 label="Passing Marks"
@@ -529,7 +568,7 @@ const Tests: React.FC = () => {
                 required
               />
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={3}>
               <TextField
                 name="duration"
                 label="Duration (minutes)"

@@ -6,6 +6,7 @@ interface User {
   email: string;
   testsPurchased?: number;
   testsUsed?: number;
+  isAdmin?: boolean;
 }
 
 interface AuthContextType {

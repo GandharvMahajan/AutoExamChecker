@@ -24,8 +24,13 @@ const PaymentSuccess: React.FC = () => {
   const plan = query.get('plan');
 
   useEffect(() => {
+    // If not authenticated, store the session info in localStorage and redirect to login
     if (!isAuthenticated || !token) {
-      navigate('/login');
+      // Save payment info to localStorage so we can process it after login
+      if (sessionId && plan) {
+        localStorage.setItem('pendingPayment', JSON.stringify({ sessionId, plan }));
+      }
+      navigate('/login', { state: { from: '/payment-success', message: 'Please log in to complete your payment verification' } });
       return;
     }
 

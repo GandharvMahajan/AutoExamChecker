@@ -29,10 +29,10 @@ adminApi.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       // Redirect to login page on authentication errors
-      window.location.href = '/admin/login';
+      window.location.href = '/login';
     } else if (error.response && error.response.status === 403) {
       // Handle forbidden errors (not an admin)
-      window.location.href = '/admin/unauthorized';
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }
@@ -137,8 +137,16 @@ export const dashboardService = {
   // Get dashboard statistics
   getStats: async () => {
     try {
-      const response = await adminApi.get('/stats');
-      return response.data;
+      // Try the /dashboard endpoint first
+      try {
+        const response = await adminApi.get('/dashboard');
+        return response.data;
+      } catch (error) {
+        console.log('Error with /dashboard endpoint, trying /stats instead');
+        // If /dashboard fails, try /stats
+        const response = await adminApi.get('/stats');
+        return response.data;
+      }
     } catch (error) {
       console.error('Error fetching dashboard statistics:', error);
       throw error;

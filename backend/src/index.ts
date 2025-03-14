@@ -39,7 +39,6 @@ const homeHandler: RequestHandler = (req, res) => {
 app.get('/', homeHandler);
 
 // API Routes
-app.use('/api/test-db', testRoutes);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/payment', paymentRoutes);
 app.use('/api/v1/tests', testRoutes);

@@ -18,13 +18,14 @@ const testValidation = [
   body('subject').notEmpty().withMessage('Subject is required'),
   body('totalMarks').isInt({ min: 1 }).withMessage('Total marks must be a positive integer'),
   body('passingMarks').isInt({ min: 0 }).withMessage('Passing marks must be a non-negative integer'),
-  body('duration').isInt({ min: 1 }).withMessage('Duration must be a positive integer')
+  body('duration').isInt({ min: 1 }).withMessage('Duration must be a positive integer'),
+  body('class').isInt({ min: 1, max: 12 }).withMessage('Class must be an integer between 1 and 12')
 ];
 
 // Get all tests
 const getAllTests: RequestHandler = async (req, res) => {
   try {
-    const tests = await prisma.test.findMany({
+    const tests = await prisma.examTest.findMany({
       orderBy: {
         createdAt: 'desc'
       }
@@ -51,7 +52,7 @@ const getTestById: RequestHandler = async (req, res) => {
     const { id } = req.params;
     
     // For now, omit the include field that's causing errors
-    const test = await prisma.test.findUnique({
+    const test = await prisma.examTest.findUnique({
       where: {
         id: parseInt(id)
       }
@@ -83,10 +84,10 @@ router.get('/tests/:id', getTestById);
 // Create a new test
 const createTest: RequestHandler = async (req, res) => {
   try {
-    const { title, subject, description, totalMarks, passingMarks, duration } = req.body;
+    const { title, subject, description, totalMarks, passingMarks, duration, class: classLevel } = req.body;
     
     // Validate input
-    if (!title || !subject || !totalMarks || !passingMarks || !duration) {
+    if (!title || !subject || !totalMarks || !passingMarks || !duration || !classLevel) {
       res.status(400).json({
         success: false,
         message: 'Missing required fields'
@@ -94,15 +95,26 @@ const createTest: RequestHandler = async (req, res) => {
       return;
     }
     
+    // Validate class level
+    const classNum = parseInt(classLevel);
+    if (isNaN(classNum) || classNum < 1 || classNum > 12) {
+      res.status(400).json({
+        success: false,
+        message: 'Class must be an integer between 1 and 12'
+      });
+      return;
+    }
+    
     // For now, use any to bypass the Prisma type issues
-    const test = await (prisma.test as any).create({
+    const test = await (prisma.examTest as any).create({
       data: {
         title,
         subject,
         description: description || null,
         totalMarks,
         passingMarks,
-        duration
+        duration,
+        class: classNum
       }
     });
     
@@ -125,10 +137,10 @@ router.post('/tests', createTest);
 const updateTest: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, subject, description, totalMarks, passingMarks, duration } = req.body;
+    const { title, subject, description, totalMarks, passingMarks, duration, class: classLevel } = req.body;
     
     // Validate input
-    if (!title || !subject || !totalMarks || !passingMarks || !duration) {
+    if (!title || !subject || !totalMarks || !passingMarks || !duration || !classLevel) {
       res.status(400).json({
         success: false,
         message: 'Missing required fields'
@@ -136,8 +148,18 @@ const updateTest: RequestHandler = async (req, res) => {
       return;
     }
     
+    // Validate class level
+    const classNum = parseInt(classLevel);
+    if (isNaN(classNum) || classNum < 1 || classNum > 12) {
+      res.status(400).json({
+        success: false,
+        message: 'Class must be an integer between 1 and 12'
+      });
+      return;
+    }
+    
     // Check if test exists
-    const existingTest = await prisma.test.findUnique({
+    const existingTest = await prisma.examTest.findUnique({
       where: {
         id: parseInt(id)
       }
@@ -152,7 +174,7 @@ const updateTest: RequestHandler = async (req, res) => {
     }
     
     // Use any to bypass the Prisma type issues
-    const test = await (prisma.test as any).update({
+    const test = await (prisma.examTest as any).update({
       where: {
         id: parseInt(id)
       },
@@ -162,7 +184,8 @@ const updateTest: RequestHandler = async (req, res) => {
         description: description || null,
         totalMarks,
         passingMarks,
-        duration
+        duration,
+        class: classNum
       }
     });
     
@@ -187,7 +210,7 @@ const deleteTest: RequestHandler = async (req, res) => {
     const { id } = req.params;
     
     // Check if test exists
-    const existingTest = await prisma.test.findUnique({
+    const existingTest = await prisma.examTest.findUnique({
       where: {
         id: parseInt(id)
       }
@@ -209,7 +232,7 @@ const deleteTest: RequestHandler = async (req, res) => {
     // });
     
     // Delete the test
-    await prisma.test.delete({
+    await prisma.examTest.delete({
       where: {
         id: parseInt(id)
       }
@@ -391,7 +414,7 @@ const getStats: RequestHandler = async (req, res) => {
     });
     
     // Get total tests count
-    const totalTests = await prisma.test.count();
+    const totalTests = await prisma.examTest.count();
     
     // Get tests started count
     const testsStarted = await prisma.userTest.count();
