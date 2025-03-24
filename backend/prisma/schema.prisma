@@ -49,7 +49,6 @@ model UserTest {
   score         Int?        // Null until completed
   startedAt     DateTime?
   completedAt   DateTime?
-  answerPdfUrl  String?     // URL to the user's uploaded PDF answer
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   

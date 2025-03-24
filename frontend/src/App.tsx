@@ -8,7 +8,6 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Pricing from './pages/Pricing';
 import PaymentSuccess from './pages/PaymentSuccess';
-import TestPage from './pages/TestPage';
 import AdminRoutesWithProvider from './admin/AdminRoutes';
 import './App.css';
 import './styles/Auth.css';
@@ -37,7 +36,6 @@ function App() {
                   <Route element={<ProtectedRoute />}>
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/payment-success" element={<PaymentSuccess />} />
-                    <Route path="/test/:testId" element={<TestPage />} />
                   </Route>
                 </Routes>
               </>

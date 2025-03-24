@@ -1,48 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Container, 
-  Typography, 
-  Box, 
-  Grid, 
-  Card, 
-  CardContent, 
-  CardActions, 
-  Button, 
-  Divider, 
-  Alert, 
-  CircularProgress, 
-  Chip, 
-  alpha, 
-  useTheme 
-} from '@mui/material';
+import { Container, Typography, Box, Grid, Card, CardContent, CardActions, Button, Divider, Alert, CircularProgress, Chip } from '@mui/material';
 import axios from 'axios';
 import { API_BASE_URL, IS_DEVELOPMENT } from '../config/constants';
 import { useAuth } from '../context/AuthContext';
 import { useCredits } from '../hooks/useCredits';
-import { motion } from 'framer-motion';
-
-// Animation variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { 
-    opacity: 1,
-    transition: { 
-      when: "beforeChildren",
-      staggerChildren: 0.1,
-      duration: 0.5
-    }
-  }
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { 
-    opacity: 1, 
-    y: 0,
-    transition: { duration: 0.5, ease: "easeOut" }
-  }
-};
 
 // Pricing plan types
 interface PricingPlan {
@@ -99,12 +61,8 @@ const Pricing: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user, token } = useAuth();
   const { refreshCredits } = useCredits();
-  const theme = useTheme();
   const [processing, setProcessing] = useState<number | null>(null);
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  
-  // Theme aware styles
-  const isDark = theme.palette.mode === 'dark';
 
   // Function to handle purchase through Stripe checkout
   const handlePurchase = async (plan: number) => {
@@ -161,244 +119,90 @@ const Pricing: React.FC = () => {
   };
 
   return (
-    <motion.div
-      initial="hidden"
-      animate="visible"
-      variants={containerVariants}
-    >
-      <Container 
-        maxWidth="lg" 
-        sx={{ 
-          py: 8,
-          color: theme.palette.text.primary
-        }}
-      >
-        <motion.div variants={itemVariants}>
-          <Box textAlign="center" mb={6}>
-            <Typography 
-              variant="h2" 
-              component="h1" 
-              gutterBottom
-              sx={{
-                fontWeight: 700,
-                letterSpacing: '-0.5px',
-                color: isDark
-                  ? theme.palette.primary.light
-                  : theme.palette.primary.dark
-              }}
-            >
-              Choose Your Plan
-            </Typography>
-            <Typography 
-              variant="h5" 
-              sx={{
-                color: alpha(theme.palette.text.primary, 0.8),
-                maxWidth: 700,
-                mx: 'auto',
-                mb: 4
-              }}
-            >
-              Affordable options for all your exam checking needs
-            </Typography>
-            
-            {IS_DEVELOPMENT && (
-              <Box mt={2}>
-                <Chip 
-                  label="Development Mode" 
-                  color="info" 
-                  size="small"
-                  sx={{
-                    backgroundColor: isDark
-                      ? alpha(theme.palette.info.dark, 0.8)
-                      : alpha(theme.palette.info.light, 0.8),
-                    color: isDark
-                      ? theme.palette.info.contrastText
-                      : theme.palette.info.dark
-                  }}
-                />
-              </Box>
-            )}
+    <Container maxWidth="lg" sx={{ py: 8 }}>
+      <Box textAlign="center" mb={4}>
+        <Typography variant="h2" component="h1" gutterBottom>
+          Choose Your Plan
+        </Typography>
+        <Typography variant="h5" color="text.secondary">
+          Affordable options for all your exam checking needs
+        </Typography>
+        
+        {IS_DEVELOPMENT && (
+          <Box mt={2}>
+            <Chip 
+              label="Development Mode" 
+              color="info" 
+              size="small"
+            />
           </Box>
-        </motion.div>
-
-        {alert && (
-          <motion.div variants={itemVariants}>
-            <Alert 
-              severity={alert.type} 
-              sx={{ 
-                mb: 4, 
-                whiteSpace: 'pre-line',
-                color: isDark 
-                  ? alert.type === 'error' ? theme.palette.error.light : theme.palette.success.light
-                  : alert.type === 'error' ? theme.palette.error.dark : theme.palette.success.dark,
-                '& .MuiAlert-icon': {
-                  color: isDark 
-                    ? alert.type === 'error' ? theme.palette.error.light : theme.palette.success.light
-                    : alert.type === 'error' ? theme.palette.error.dark : theme.palette.success.dark
-                },
-                borderRadius: 2
-              }}
-              onClose={() => setAlert(null)}
-            >
-              {alert.message}
-            </Alert>
-          </motion.div>
         )}
+      </Box>
 
-        <Grid container spacing={4} justifyContent="center">
-          {plans.map((plan, index) => (
-            <Grid item key={plan.title} xs={12} sm={6} md={4}>
-              <motion.div 
-                variants={itemVariants}
-                custom={index}
-              >
-                <Card 
-                  sx={{ 
-                    height: '100%', 
-                    display: 'flex', 
-                    flexDirection: 'column',
-                    transition: 'transform 0.3s, box-shadow 0.3s',
-                    backgroundColor: isDark
-                      ? alpha(theme.palette.background.paper, 0.6)
-                      : theme.palette.background.paper,
-                    borderRadius: '16px',
-                    boxShadow: isDark
-                      ? '0 8px 20px rgba(0, 0, 0, 0.3)'
-                      : '0 8px 20px rgba(0, 0, 0, 0.08)',
-                    border: isDark
-                      ? `1px solid ${alpha(theme.palette.primary.main, 0.1)}`
-                      : 'none',
-                    '&:hover': {
-                      transform: 'translateY(-8px)',
-                      boxShadow: isDark
-                        ? '0 14px 28px rgba(0, 0, 0, 0.4)'
-                        : '0 14px 28px rgba(0, 0, 0, 0.15)'
-                    }
-                  }}
+      {alert && (
+        <Alert 
+          severity={alert.type} 
+          sx={{ mb: 4, whiteSpace: 'pre-line' }}
+          onClose={() => setAlert(null)}
+        >
+          {alert.message}
+        </Alert>
+      )}
+
+      <Grid container spacing={4} justifyContent="center">
+        {plans.map((plan) => (
+          <Grid item key={plan.title} xs={12} sm={6} md={4}>
+            <Card 
+              sx={{ 
+                height: '100%', 
+                display: 'flex', 
+                flexDirection: 'column',
+                transition: 'transform 0.3s, box-shadow 0.3s',
+                '&:hover': {
+                  transform: 'translateY(-5px)',
+                  boxShadow: '0 10px 20px rgba(0,0,0,0.1)'
+                }
+              }}
+            >
+              <CardContent sx={{ flexGrow: 1 }}>
+                <Typography gutterBottom variant="h4" component="h2" align="center">
+                  {plan.title}
+                </Typography>
+                <Typography variant="h3" color="primary" align="center" gutterBottom>
+                  {plan.price}
+                </Typography>
+                <Typography variant="subtitle1" color="text.secondary" align="center" gutterBottom>
+                  {plan.description}
+                </Typography>
+                <Divider sx={{ my: 2 }} />
+                {plan.features.map((feature, index) => (
+                  <Typography key={index} variant="body1" sx={{ py: 0.5 }}>
+                    ✓ {feature}
+                  </Typography>
+                ))}
+              </CardContent>
+              <CardActions sx={{ justifyContent: 'center', pb: 3 }}>
+                <Button 
+                  size="large" 
+                  variant="contained" 
+                  color="primary"
+                  fullWidth
+                  sx={{ mx: 2 }}
+                  onClick={() => handlePurchase(plan.papers)}
+                  disabled={processing !== null}
                 >
-                  <CardContent sx={{ flexGrow: 1, p: 4 }}>
-                    <Typography 
-                      gutterBottom 
-                      variant="h4" 
-                      component="h2" 
-                      align="center"
-                      sx={{
-                        fontWeight: 600,
-                        mb: 2,
-                        color: theme.palette.text.primary
-                      }}
-                    >
-                      {plan.title}
-                    </Typography>
-                    <Typography 
-                      variant="h3" 
-                      align="center" 
-                      gutterBottom
-                      sx={{
-                        fontWeight: 700,
-                        color: isDark
-                          ? theme.palette.primary.light
-                          : theme.palette.primary.main
-                      }}
-                    >
-                      {plan.price}
-                    </Typography>
-                    <Typography 
-                      variant="subtitle1" 
-                      align="center" 
-                      gutterBottom
-                      sx={{
-                        fontWeight: 500,
-                        mb: 2,
-                        color: alpha(theme.palette.text.primary, 0.7)
-                      }}
-                    >
-                      {plan.description}
-                    </Typography>
-                    <Divider sx={{ 
-                      my: 2,
-                      backgroundColor: isDark
-                        ? alpha(theme.palette.divider, 0.2)
-                        : theme.palette.divider
-                    }} />
-                    {plan.features.map((feature, index) => (
-                      <Typography 
-                        key={index} 
-                        variant="body1" 
-                        sx={{ 
-                          py: 0.8,
-                          color: theme.palette.text.primary,
-                          display: 'flex',
-                          alignItems: 'center'
-                        }}
-                      >
-                        <Box 
-                          component="span" 
-                          sx={{
-                            color: isDark
-                              ? theme.palette.success.light
-                              : theme.palette.success.main,
-                            mr: 1,
-                            fontWeight: 'bold'
-                          }}
-                        >
-                          ✓
-                        </Box> 
-                        {feature}
-                      </Typography>
-                    ))}
-                  </CardContent>
-                  <CardActions sx={{ justifyContent: 'center', pb: 4, px: 3 }}>
-                    <Button 
-                      size="large" 
-                      variant="contained" 
-                      color="primary"
-                      fullWidth
-                      onClick={() => handlePurchase(plan.papers)}
-                      disabled={processing !== null}
-                      sx={{
-                        py: 1.5,
-                        borderRadius: '10px',
-                        textTransform: 'none',
-                        fontWeight: 600,
-                        fontSize: '1.1rem',
-                        boxShadow: isDark
-                          ? '0 4px 12px rgba(0, 127, 255, 0.3)'
-                          : '0 4px 12px rgba(0, 0, 0, 0.1)',
-                        transition: 'all 0.2s ease',
-                        backgroundColor: isDark
-                          ? theme.palette.primary.dark
-                          : theme.palette.primary.main,
-                        '&:hover': {
-                          transform: 'translateY(-2px)',
-                          boxShadow: isDark
-                            ? '0 6px 16px rgba(0, 127, 255, 0.4)'
-                            : '0 6px 16px rgba(0, 0, 0, 0.15)',
-                          backgroundColor: isDark
-                            ? theme.palette.primary.dark
-                            : theme.palette.primary.dark
-                        }
-                      }}
-                    >
-                      {processing === plan.papers ? (
-                        <CircularProgress 
-                          size={24} 
-                          sx={{ 
-                            color: theme.palette.primary.contrastText 
-                          }} 
-                        />
-                      ) : (
-                        `Buy Now`
-                      )}
-                    </Button>
-                  </CardActions>
-                </Card>
-              </motion.div>
-            </Grid>
-          ))}
-        </Grid>
-      </Container>
-    </motion.div>
+                  {processing === plan.papers ? (
+                    <CircularProgress size={24} color="inherit" />
+                  ) : (
+                    `Buy Now`
+                  )}
+                </Button>
+              </CardActions>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+    </Container>
   );
 };
 

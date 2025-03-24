@@ -351,7 +351,7 @@ const updateTestWithPDF: RequestHandler = async (req, res) => {
       where: {
         id: parseInt(id)
       }
-    }) as any; // Use type assertion to avoid TypeScript errors
+    });
     
     if (!existingTest) {
       // If a file was uploaded, delete it
