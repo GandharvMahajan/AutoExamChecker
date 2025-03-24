@@ -90,15 +90,25 @@ const Dashboard = () => {
   const testsRemaining = testsPurchased - testsUsed;
   const usagePercentage = testsPurchased > 0 ? (testsUsed / testsPurchased) * 100 : 0;
   
+  // Theme aware styles
+  const isDark = theme.palette.mode === 'dark';
+  
   // Apple-inspired card style
   const cardStyle = {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+    backgroundColor: isDark ? alpha(theme.palette.background.paper, 0.6) : '#ffffff',
+    borderRadius: 4,
+    boxShadow: isDark 
+      ? '0 4px 20px rgba(0, 0, 0, 0.3)' 
+      : '0 4px 20px rgba(0, 0, 0, 0.08)',
+    border: isDark 
+      ? `1px solid ${alpha(theme.palette.primary.main, 0.1)}`
+      : 'none',
     transition: 'transform 0.3s ease, box-shadow 0.3s ease',
     '&:hover': {
       transform: 'translateY(-4px)',
-      boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+      boxShadow: isDark 
+        ? '0 10px 25px rgba(0, 0, 0, 0.4)' 
+        : '0 10px 25px rgba(0, 0, 0, 0.1)',
     }
   };
   
@@ -241,7 +251,9 @@ const Dashboard = () => {
         transition: 'all 0.2s ease',
         '&:hover': {
           transform: 'scale(1.02)',
-          boxShadow: '0 5px 15px rgba(0, 0, 0, 0.08)',
+          boxShadow: isDark 
+            ? '0 5px 15px rgba(0, 127, 255, 0.2)' 
+            : '0 5px 15px rgba(0, 0, 0, 0.08)',
         },
         ...props.sx
       }}
@@ -261,7 +273,9 @@ const Dashboard = () => {
         maxWidth: "1200px", 
         mx: "auto",
         overflowX: 'hidden',
-        backgroundColor: alpha(theme.palette.background.default, 0.6)
+        backgroundColor: isDark 
+          ? alpha(theme.palette.background.default, 0.4)
+          : alpha(theme.palette.background.default, 0.6)
       }}>
         <motion.div variants={itemVariants}>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
@@ -272,20 +286,15 @@ const Dashboard = () => {
                 sx={{ 
                   fontWeight: 600, 
                   letterSpacing: '-0.5px',
-                  fontSize: { xs: '1.8rem', md: '2.2rem' }
+                  fontSize: { xs: '1.8rem', md: '2.2rem' },
+                  color: isDark 
+                    ? theme.palette.primary.light
+                    : theme.palette.primary.dark
                 }}
               >
                 Dashboard
               </Typography>
             </Box>
-            <StyledButton 
-              variant="outlined" 
-              color="primary" 
-              onClick={handleLogout}
-              sx={{ px: 3 }}
-            >
-              Logout
-            </StyledButton>
           </Box>
         </motion.div>
         
@@ -296,9 +305,13 @@ const Dashboard = () => {
               p: 3, 
               mb: 4, 
               borderRadius: 4,
-              background: `linear-gradient(135deg, ${alpha(theme.palette.primary.light, 0.1)} 0%, ${alpha(theme.palette.primary.main, 0.05)} 100%)`,
+              background: isDark
+                ? `linear-gradient(135deg, ${alpha(theme.palette.primary.dark, 0.1)} 0%, ${alpha(theme.palette.primary.main, 0.05)} 100%)`
+                : `linear-gradient(135deg, ${alpha(theme.palette.primary.light, 0.1)} 0%, ${alpha(theme.palette.primary.main, 0.05)} 100%)`,
               backdropFilter: 'blur(10px)',
-              border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`
+              border: isDark
+                ? `1px solid ${alpha(theme.palette.primary.main, 0.2)}`
+                : `1px solid ${alpha(theme.palette.primary.main, 0.1)}`
             }}
           >
             <Typography 
@@ -306,12 +319,20 @@ const Dashboard = () => {
               gutterBottom 
               sx={{ 
                 fontWeight: 500, 
-                color: theme.palette.primary.main 
+                color: isDark
+                  ? theme.palette.primary.light
+                  : theme.palette.primary.main
               }}
             >
               Welcome, {user?.name}!
             </Typography>
-            <Typography variant="body1" sx={{ opacity: 0.8 }}>
+            <Typography 
+              variant="body1" 
+              sx={{ 
+                opacity: isDark ? 0.9 : 0.8,
+                color: theme.palette.text.primary
+              }}
+            >
               Email: {user?.email}
             </Typography>
           </Paper>
@@ -328,7 +349,10 @@ const Dashboard = () => {
                       gutterBottom 
                       sx={{ 
                         fontWeight: 500, 
-                        letterSpacing: '-0.3px' 
+                        letterSpacing: '-0.3px',
+                        color: isDark
+                          ? theme.palette.primary.light
+                          : theme.palette.primary.dark
                       }}
                     >
                       Test Credits
@@ -340,7 +364,12 @@ const Dashboard = () => {
                         size="small" 
                         variant="text" 
                         onClick={() => refreshCredits()}
-                        sx={{ minWidth: 'auto' }}
+                        sx={{ 
+                          minWidth: 'auto',
+                          color: isDark
+                            ? theme.palette.primary.light
+                            : theme.palette.primary.main
+                        }}
                       >
                         Refresh
                       </StyledButton>
@@ -357,7 +386,7 @@ const Dashboard = () => {
                         variant="body2" 
                         sx={{ 
                           fontWeight: 500, 
-                          color: alpha(theme.palette.text.primary, 0.7) 
+                          color: alpha(theme.palette.text.primary, isDark ? 0.9 : 0.7)
                         }}
                       >
                         {testsUsed} used of {testsPurchased} total
@@ -366,7 +395,9 @@ const Dashboard = () => {
                         variant="body2" 
                         sx={{ 
                           fontWeight: 600, 
-                          color: theme.palette.primary.main 
+                          color: isDark
+                            ? theme.palette.primary.light
+                            : theme.palette.primary.main
                         }}
                       >
                         {testsRemaining} remaining
@@ -379,9 +410,13 @@ const Dashboard = () => {
                         mt: 1, 
                         height: 12, 
                         borderRadius: 6,
-                        backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                        backgroundColor: isDark
+                          ? alpha(theme.palette.primary.dark, 0.2)
+                          : alpha(theme.palette.primary.main, 0.1),
                         '.MuiLinearProgress-bar': {
-                          backgroundColor: theme.palette.primary.main,
+                          backgroundColor: isDark
+                            ? theme.palette.primary.light
+                            : theme.palette.primary.main,
                           borderRadius: 6,
                           transition: 'transform 1s cubic-bezier(0.23, 1, 0.32, 1)'
                         }
@@ -390,7 +425,13 @@ const Dashboard = () => {
                   </Box>
                   {testsPurchased === 0 && (
                     <Box mt={2}>
-                      <Typography variant="body2" sx={{ color: alpha(theme.palette.text.primary, 0.6), mb: 2 }}>
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          color: alpha(theme.palette.text.primary, isDark ? 0.8 : 0.6), 
+                          mb: 2
+                        }}
+                      >
                         You don't have any test credits yet.
                       </Typography>
                       <StyledButton 
@@ -407,7 +448,11 @@ const Dashboard = () => {
                   )}
                   {testsRemaining <= 2 && testsPurchased > 0 && (
                     <Box mt={2}>
-                      <Typography variant="body2" color="warning.main" sx={{ mb: 2, fontWeight: 500 }}>
+                      <Typography 
+                        variant="body2" 
+                        color={isDark ? "warning.light" : "warning.main"} 
+                        sx={{ mb: 2, fontWeight: 500 }}
+                      >
                         You're running low on test credits!
                       </Typography>
                       <StyledButton 
@@ -435,7 +480,11 @@ const Dashboard = () => {
               sx={{ 
                 mb: 4, 
                 borderRadius: 2,
-                border: `1px solid ${alpha(theme.palette.error.main, 0.2)}`
+                border: `1px solid ${alpha(theme.palette.error.main, 0.2)}`,
+                color: isDark ? theme.palette.error.light : theme.palette.error.dark,
+                '& .MuiAlert-icon': {
+                  color: isDark ? theme.palette.error.light : theme.palette.error.dark,
+                }
               }}
             >
               {error}
@@ -449,8 +498,15 @@ const Dashboard = () => {
             sx={{ 
               p: 3, 
               borderRadius: 4,
-              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.06)',
-              border: `1px solid ${alpha('#000', 0.05)}`
+              boxShadow: isDark
+                ? '0 4px 20px rgba(0, 0, 0, 0.3)'
+                : '0 4px 20px rgba(0, 0, 0, 0.06)',
+              border: isDark
+                ? `1px solid ${alpha(theme.palette.divider, 0.2)}`
+                : `1px solid ${alpha('#000', 0.05)}`,
+              backgroundColor: isDark
+                ? alpha(theme.palette.background.paper, 0.6)
+                : theme.palette.background.paper
             }}
           >
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
@@ -458,7 +514,10 @@ const Dashboard = () => {
                 variant="h6" 
                 sx={{ 
                   fontWeight: 500, 
-                  letterSpacing: '-0.3px' 
+                  letterSpacing: '-0.3px',
+                  color: isDark
+                    ? theme.palette.primary.light
+                    : theme.palette.primary.dark
                 }}
               >
                 Available Tests
@@ -469,6 +528,11 @@ const Dashboard = () => {
                   variant="text" 
                   color="primary" 
                   onClick={() => window.location.reload()}
+                  sx={{
+                    color: isDark
+                      ? theme.palette.primary.light
+                      : theme.palette.primary.main
+                  }}
                 >
                   Refresh
                 </StyledButton>
@@ -489,11 +553,22 @@ const Dashboard = () => {
                 size="small" 
                 sx={{ 
                   minWidth: 200,
+                  '.MuiInputLabel-root': {
+                    color: alpha(theme.palette.text.primary, isDark ? 0.7 : 0.6)
+                  },
                   '.MuiOutlinedInput-root': {
                     borderRadius: 2,
                     transition: 'all 0.2s',
+                    '& fieldset': {
+                      borderColor: alpha(theme.palette.divider, isDark ? 0.7 : 0.3)
+                    },
+                    '&:hover fieldset': {
+                      borderColor: isDark
+                        ? theme.palette.primary.light
+                        : theme.palette.primary.main
+                    },
                     '&.Mui-focused': {
-                      boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.2)}`
+                      boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, isDark ? 0.3 : 0.2)}`
                     }
                   }
                 }}
@@ -519,11 +594,22 @@ const Dashboard = () => {
                 size="small" 
                 sx={{ 
                   minWidth: 200,
+                  '.MuiInputLabel-root': {
+                    color: alpha(theme.palette.text.primary, isDark ? 0.7 : 0.6)
+                  },
                   '.MuiOutlinedInput-root': {
                     borderRadius: 2,
                     transition: 'all 0.2s',
+                    '& fieldset': {
+                      borderColor: alpha(theme.palette.divider, isDark ? 0.7 : 0.3)
+                    },
+                    '&:hover fieldset': {
+                      borderColor: isDark
+                        ? theme.palette.primary.light
+                        : theme.palette.primary.main
+                    },
                     '&.Mui-focused': {
-                      boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.2)}`
+                      boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, isDark ? 0.3 : 0.2)}`
                     }
                   }
                 }}
@@ -550,6 +636,11 @@ const Dashboard = () => {
                   size="small"
                   variant="text"
                   onClick={clearFilters}
+                  sx={{
+                    color: isDark
+                      ? theme.palette.primary.light
+                      : theme.palette.primary.main
+                  }}
                 >
                   Clear Filters
                 </StyledButton>
@@ -560,7 +651,9 @@ const Dashboard = () => {
               <Box display="flex" justifyContent="center" p={4}>
                 <CircularProgress 
                   sx={{ 
-                    color: theme.palette.primary.main
+                    color: isDark
+                      ? theme.palette.primary.light
+                      : theme.palette.primary.main
                   }} 
                 />
               </Box>
@@ -568,19 +661,51 @@ const Dashboard = () => {
               <TableContainer sx={{ 
                 borderRadius: 2, 
                 overflow: 'hidden',
-                border: `1px solid ${alpha('#000', 0.05)}`,
+                border: isDark
+                  ? `1px solid ${alpha(theme.palette.divider, 0.2)}`
+                  : `1px solid ${alpha('#000', 0.05)}`,
                 '& .MuiTableCell-root': {
-                  borderColor: alpha('#000', 0.05)
+                  borderColor: alpha(theme.palette.divider, isDark ? 0.2 : 0.05),
+                  color: theme.palette.text.primary
                 }
               }}>
                 <Table>
                   <TableHead>
-                    <TableRow sx={{ backgroundColor: alpha(theme.palette.primary.main, 0.03) }}>
-                      <TableCell sx={{ fontWeight: 600 }}>Test Name</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Subject</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Class</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Maximum Score</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
+                    <TableRow sx={{ 
+                      backgroundColor: isDark
+                        ? alpha(theme.palette.primary.dark, 0.1)
+                        : alpha(theme.palette.primary.main, 0.03)
+                    }}>
+                      <TableCell sx={{ 
+                        fontWeight: 600,
+                        color: isDark
+                          ? theme.palette.primary.light
+                          : theme.palette.primary.dark
+                      }}>Test Name</TableCell>
+                      <TableCell sx={{ 
+                        fontWeight: 600,
+                        color: isDark
+                          ? theme.palette.primary.light
+                          : theme.palette.primary.dark
+                      }}>Subject</TableCell>
+                      <TableCell sx={{ 
+                        fontWeight: 600,
+                        color: isDark
+                          ? theme.palette.primary.light
+                          : theme.palette.primary.dark
+                      }}>Class</TableCell>
+                      <TableCell sx={{ 
+                        fontWeight: 600,
+                        color: isDark
+                          ? theme.palette.primary.light
+                          : theme.palette.primary.dark
+                      }}>Maximum Score</TableCell>
+                      <TableCell sx={{ 
+                        fontWeight: 600,
+                        color: isDark
+                          ? theme.palette.primary.light
+                          : theme.palette.primary.dark
+                      }}>Actions</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -590,7 +715,9 @@ const Dashboard = () => {
                         sx={{ 
                           transition: 'background-color 0.2s',
                           '&:hover': {
-                            backgroundColor: alpha(theme.palette.primary.main, 0.03)
+                            backgroundColor: isDark
+                              ? alpha(theme.palette.primary.dark, 0.05)
+                              : alpha(theme.palette.primary.main, 0.03)
                           }
                         }}
                       >
@@ -613,7 +740,19 @@ const Dashboard = () => {
                                 variant="outlined"
                                 onClick={() => handleStartTest(test.id)}
                                 disabled={testsRemaining <= 0}
-                                sx={{ px: 2 }}
+                                sx={{ 
+                                  px: 2,
+                                  borderColor: isDark
+                                    ? alpha(theme.palette.primary.light, 0.7)
+                                    : theme.palette.primary.main,
+                                  color: isDark
+                                    ? theme.palette.primary.light
+                                    : theme.palette.primary.main,
+                                  '&.Mui-disabled': {
+                                    borderColor: alpha(theme.palette.action.disabled, 0.3),
+                                    color: theme.palette.action.disabled
+                                  }
+                                }}
                               >
                                 Start Test
                               </StyledButton>
@@ -624,7 +763,13 @@ const Dashboard = () => {
                                 variant="contained"
                                 color="primary"
                                 onClick={() => navigate(`/test/${test.id}`)}
-                                sx={{ px: 2 }}
+                                sx={{ 
+                                  px: 2,
+                                  backgroundColor: isDark
+                                    ? theme.palette.primary.dark
+                                    : theme.palette.primary.main,
+                                  color: '#fff'
+                                }}
                               >
                                 Continue
                               </StyledButton>
@@ -634,7 +779,15 @@ const Dashboard = () => {
                                 size="small" 
                                 variant="outlined"
                                 color="success"
-                                sx={{ px: 2 }}
+                                sx={{ 
+                                  px: 2,
+                                  borderColor: isDark
+                                    ? theme.palette.success.light
+                                    : theme.palette.success.main,
+                                  color: isDark
+                                    ? theme.palette.success.light
+                                    : theme.palette.success.main
+                                }}
                               >
                                 View Results
                               </StyledButton>
@@ -653,14 +806,18 @@ const Dashboard = () => {
                   px: 3, 
                   textAlign: 'center',
                   borderRadius: 2,
-                  backgroundColor: alpha(theme.palette.background.paper, 0.5),
-                  border: `1px solid ${alpha('#000', 0.05)}`
+                  backgroundColor: isDark
+                    ? alpha(theme.palette.background.paper, 0.3)
+                    : alpha(theme.palette.background.paper, 0.5),
+                  border: isDark
+                    ? `1px solid ${alpha(theme.palette.divider, 0.2)}`
+                    : `1px solid ${alpha('#000', 0.05)}`
                 }}
               >
                 <Typography 
                   variant="body1" 
                   sx={{ 
-                    color: alpha(theme.palette.text.primary, 0.7),
+                    color: alpha(theme.palette.text.primary, isDark ? 0.9 : 0.7),
                     fontWeight: 500
                   }}
                 >

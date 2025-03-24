@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction, RequestHandler } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, UserTest, Prisma } from '@prisma/client';
 import auth from '../middleware/auth';
 import multer from 'multer';
 import path from 'path';
@@ -564,8 +564,10 @@ router.post('/:testId/upload-answer', auth, answerUpload.single('answerPdf'), as
     }
     
     // Delete previous answer file if it exists
-    if (userTest.answerPdfUrl) {
-      const previousFilePath = path.join(__dirname, '../../', userTest.answerPdfUrl);
+    // Use a type assertion with a property check to safely access answerPdfUrl
+    const userTestAny = userTest as any;
+    if (userTestAny.answerPdfUrl) {
+      const previousFilePath = path.join(__dirname, '../../', userTestAny.answerPdfUrl);
       if (fs.existsSync(previousFilePath)) {
         fs.unlinkSync(previousFilePath);
       }
@@ -574,15 +576,15 @@ router.post('/:testId/upload-answer', auth, answerUpload.single('answerPdf'), as
     // Create the URL for the uploaded PDF
     const answerPdfUrl = `/uploads/answers/${path.basename(req.file.path)}`;
     
-    // Update the user test record with the PDF URL
-    // @ts-ignore
+    // Update the user test record with the PDF URL using type assertion
     await prisma.userTest.update({
       where: {
         id: userTest.id
       },
       data: {
+        // Type assertion to safely update the answerPdfUrl field
         answerPdfUrl
-      }
+      } as any
     });
     
     res.json({ 
