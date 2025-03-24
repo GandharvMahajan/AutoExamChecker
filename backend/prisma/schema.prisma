@@ -34,6 +34,7 @@ model ExamTest {
   passingMarks  Int
   duration      Int         // Duration in minutes
   class         Int         // Class/grade level (1-12)
+  pdfUrl        String?     // URL to the uploaded PDF file
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   userTests     UserTest[]  // Relation to UserTest
@@ -48,6 +49,7 @@ model UserTest {
   score         Int?        // Null until completed
   startedAt     DateTime?
   completedAt   DateTime?
+  answerPdfUrl  String?     // URL to the user's uploaded PDF answer
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   

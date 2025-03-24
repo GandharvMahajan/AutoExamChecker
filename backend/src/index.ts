@@ -1,6 +1,7 @@
 import express, { Request, Response, RequestHandler } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 import db from './utils/database';
 import testRoutes from './routes/testRoutes';
 import authRoutes from './routes/authRoutes';
@@ -22,6 +23,9 @@ app.use('/api/v1/payment/webhook', express.raw({ type: 'application/json' }));
 
 // Use JSON middleware for all other routes
 app.use(express.json());
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Home route handler
 const homeHandler: RequestHandler = (req, res) => {

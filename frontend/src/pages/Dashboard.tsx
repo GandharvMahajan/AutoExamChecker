@@ -164,39 +164,8 @@ const Dashboard = () => {
       return;
     }
     
-    try {
-      const response = await axios.post(
-        `${API_BASE_URL}/api/v1/tests/start`,
-        { testId },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'x-auth-token': token
-          }
-        }
-      );
-      
-      if (response.data.success) {
-        // Refresh tests and credits
-        refreshCredits();
-        // In a real app, navigate to the test page
-        // For now, just refresh the tests list
-        window.location.reload();
-      }
-    } catch (err) {
-      console.error('Error starting test:', err);
-      
-      // Check if it's an authentication error
-      if (axios.isAxiosError(err) && err.response?.status === 401) {
-        setError('Your session has expired. Please login again.');
-        refreshToken(); // Clear the token
-        setTimeout(() => {
-          navigate('/login');
-        }, 2000);
-      } else {
-        setError('Failed to start the test');
-      }
-    }
+    // Navigate to the test page with the test ID
+    navigate(`/test/${testId}`);
   };
   
   // Helper function to get status chip color
@@ -434,6 +403,7 @@ const Dashboard = () => {
                             size="small" 
                             variant="contained"
                             color="primary"
+                            onClick={() => navigate(`/test/${test.id}`)}
                           >
                             Continue
                           </Button>

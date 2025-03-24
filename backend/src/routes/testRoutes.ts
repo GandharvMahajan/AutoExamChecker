@@ -1,12 +1,80 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction, RequestHandler } from 'express';
 import { PrismaClient } from '@prisma/client';
 import auth from '../middleware/auth';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
 // Create Prisma client
 const prisma = new PrismaClient();
 
 // Create router
 const router = Router();
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, '../../uploads/answers');
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const fileExt = path.extname(file.originalname);
+    cb(null, 'answer-' + uniqueSuffix + fileExt);
+  }
+});
+
+// File filter to only allow PDFs
+const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  if (file.mimetype === 'application/pdf') {
+    cb(null, true);
+  } else {
+    cb(new Error('Only PDF files are allowed'));
+  }
+};
+
+const upload = multer({ 
+  storage, 
+  fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB file size limit
+});
+
+// Configure multer for answer PDF uploads
+const answerStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, '../../uploads/answers');
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const fileExt = path.extname(file.originalname);
+    cb(null, 'answer-' + uniqueSuffix + fileExt);
+  }
+});
+
+// File filter to only allow PDFs
+const pdfFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  if (file.mimetype === 'application/pdf') {
+    cb(null, true);
+  } else {
+    cb(new Error('Only PDF files are allowed'));
+  }
+};
+
+// Configure multer for PDF uploads
+const answerUpload = multer({
+  storage: answerStorage,
+  fileFilter: pdfFilter,
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB size limit
+});
 
 // Sample test data - we'll use this to seed the database if no tests exist
 const sampleTests = [
@@ -281,6 +349,305 @@ router.post('/start', auth, async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error starting test:', error);
     res.status(500).json({ message: 'Server error starting test' });
+  }
+});
+
+// Start a specific test by ID
+// @ts-ignore
+router.post('/:testId/start', auth, async (req: Request, res: Response) => {
+  try {
+    const { testId } = req.params;
+    console.log(`Attempting to start test with ID: ${testId}`);
+    
+    const userId = (req as Request & { user?: { userId: number } }).user?.userId;
+
+    if (!userId) {
+      console.log('User not authenticated');
+      res.status(401).json({ success: false, message: 'User not authenticated' });
+      return;
+    }
+
+    // Check if user has tests available
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user) {
+      console.log(`User with ID ${userId} not found`);
+      res.status(404).json({ success: false, message: 'User not found' });
+      return;
+    }
+
+    // Check if the test exists
+    const test = await prisma.examTest.findUnique({
+      where: { id: Number(testId) }
+    });
+
+    if (!test) {
+      console.log(`Test with ID ${testId} not found`);
+      res.status(404).json({ success: false, message: 'Test not found' });
+      return;
+    }
+    
+    console.log(`Test found: ${test.title}`);
+
+    // Try to find the user test record, even if it might be deleted or have null status
+    let userTest = await prisma.userTest.findFirst({
+      where: {
+        userId,
+        testId: Number(testId)
+      }
+    });
+
+    if (userTest) {
+      // If test is already completed, don't allow restarting
+      if (userTest.status === 'Completed') {
+        console.log(`Test ${testId} is already completed for user ${userId}`);
+        res.status(400).json({ 
+          success: false,
+          message: 'This test has already been completed.' 
+        });
+        return;
+      }
+      
+      console.log(`Updating existing test record for user ${userId}, test ${testId}`);
+      // Update the existing record
+      userTest = await prisma.userTest.update({
+        where: { id: userTest.id },
+        data: {
+          status: 'InProgress',
+          startedAt: new Date(),
+          // Reset completedAt and score if restarting
+          completedAt: null,
+          score: null
+        }
+      });
+    } else {
+      // Check if user has tests available
+      if (user.testsUsed >= user.testsPurchased) {
+        console.log(`User ${userId} has no available tests`);
+        res.status(400).json({ 
+          success: false,
+          message: 'No available tests. Please purchase more tests to continue.' 
+        });
+        return;
+      }
+
+      console.log(`Creating new test record for user ${userId}, test ${testId}`);
+      try {
+        // Create a new user test record
+        userTest = await prisma.userTest.create({
+          data: {
+            userId,
+            testId: Number(testId),
+            status: 'InProgress',
+            startedAt: new Date()
+          }
+        });
+
+        // Increment the testsUsed count
+        await prisma.user.update({
+          where: { id: userId },
+          data: {
+            testsUsed: {
+              increment: 1
+            }
+          }
+        });
+      } catch (createError: any) {
+        // Handle potential unique constraint errors
+        console.error(`Error creating test record: ${createError}`);
+        if (createError.code === 'P2002') {
+          // If a duplicate error occurs, try to retrieve the record again
+          userTest = await prisma.userTest.findFirst({
+            where: {
+              userId,
+              testId: Number(testId)
+            }
+          });
+          
+          if (userTest) {
+            // Update it instead of creating a new one
+            userTest = await prisma.userTest.update({
+              where: { id: userTest.id },
+              data: {
+                status: 'InProgress',
+                startedAt: new Date(),
+                completedAt: null,
+                score: null
+              }
+            });
+          } else {
+            throw new Error('Failed to create or retrieve test record');
+          }
+        } else {
+          throw createError;
+        }
+      }
+    }
+
+    // For now, return the test data the user needs to take the test
+    const responseData = {
+      success: true,
+      message: 'Test started successfully',
+      userTest,
+      test: {
+        id: test.id,
+        title: test.title,
+        subject: test.subject,
+        description: test.description,
+        totalMarks: test.totalMarks,
+        passingMarks: test.passingMarks,
+        duration: test.duration,
+        pdfUrl: test.pdfUrl,
+        startTime: userTest.startedAt
+      }
+    };
+    
+    console.log('Sending response data:', JSON.stringify(responseData));
+    res.status(200).json(responseData);
+  } catch (error) {
+    console.error('Error starting test by ID:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error starting test',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// @route   POST /api/v1/tests/:testId/upload-answer
+// @desc    Upload PDF answer for a test
+// @access  Private
+// @ts-ignore
+router.post('/:testId/upload-answer', auth, answerUpload.single('answerPdf'), async (req: Request, res: Response) => {
+  try {
+    // Check if file was uploaded
+    if (!req.file) {
+      res.status(400).json({ 
+        success: false, 
+        message: 'No PDF file uploaded' 
+      });
+      return;
+    }
+    
+    const testId = parseInt(req.params.testId);
+    if (isNaN(testId)) {
+      // Delete the uploaded file
+      fs.unlinkSync(req.file.path);
+      res.status(400).json({ 
+        success: false, 
+        message: 'Invalid test ID' 
+      });
+      return;
+    }
+    
+    const userId = req.user!.userId;
+    
+    // Check if the user has a valid test record
+    const userTest = await prisma.userTest.findFirst({
+      where: {
+        userId,
+        testId,
+        status: { not: 'Completed' }
+      }
+    });
+    
+    if (!userTest) {
+      // Delete the uploaded file
+      fs.unlinkSync(req.file.path);
+      res.status(404).json({ 
+        success: false, 
+        message: 'Test not found or already completed' 
+      });
+      return;
+    }
+    
+    // Delete previous answer file if it exists
+    if (userTest.answerPdfUrl) {
+      const previousFilePath = path.join(__dirname, '../../', userTest.answerPdfUrl);
+      if (fs.existsSync(previousFilePath)) {
+        fs.unlinkSync(previousFilePath);
+      }
+    }
+    
+    // Create the URL for the uploaded PDF
+    const answerPdfUrl = `/uploads/answers/${path.basename(req.file.path)}`;
+    
+    // Update the user test record with the PDF URL
+    // @ts-ignore
+    await prisma.userTest.update({
+      where: {
+        id: userTest.id
+      },
+      data: {
+        answerPdfUrl
+      }
+    });
+    
+    res.json({ 
+      success: true, 
+      message: 'Answer PDF uploaded successfully',
+      answerPdfUrl
+    });
+  } catch (error) {
+    console.error('Error uploading answer PDF:', error);
+    
+    // Delete the uploaded file if there was an error
+    if (req.file) {
+      fs.unlinkSync(req.file.path);
+    }
+    
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error' 
+    });
+  }
+});
+
+// @route   POST /api/v1/tests/:testId/submit
+// @desc    Submit a test
+// @access  Private
+// @ts-ignore
+router.post('/:testId/submit', auth, async (req: Request, res: Response) => {
+  try {
+    const testId = parseInt(req.params.testId);
+    if (isNaN(testId)) {
+      res.status(400).json({ success: false, message: 'Invalid test ID' });
+      return;
+    }
+
+    const userId = req.user!.userId;
+
+    // Check if the user has a valid test record
+    const userTest = await prisma.userTest.findFirst({
+      where: {
+        userId,
+        testId,
+        status: { not: 'Completed' }
+      }
+    });
+
+    if (!userTest) {
+      res.status(404).json({ success: false, message: 'Test not found or already completed' });
+      return;
+    }
+
+    // Mark the test as completed
+    await prisma.userTest.update({
+      where: {
+        id: userTest.id
+      },
+      data: {
+        status: 'Completed',
+        completedAt: new Date()
+      }
+    });
+
+    res.json({ success: true, message: 'Test submitted successfully' });
+  } catch (error) {
+    console.error('Error submitting test:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 

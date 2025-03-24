@@ -49,6 +49,7 @@ interface TestFormData {
   passingMarks: number;
   duration: number;
   class: number;
+  pdfFile?: File | null;
 }
 
 const initialFormData: TestFormData = {
@@ -58,7 +59,8 @@ const initialFormData: TestFormData = {
   totalMarks: 100,
   passingMarks: 40,
   duration: 120,
-  class: 10
+  class: 10,
+  pdfFile: null
 };
 
 const Tests: React.FC = () => {
@@ -130,6 +132,24 @@ const Tests: React.FC = () => {
         ...validationErrors,
         [name]: ''
       });
+    }
+  };
+  
+  // Handle file upload
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFormData({
+        ...formData,
+        pdfFile: e.target.files[0]
+      });
+      
+      // Clear validation error for the field
+      if (validationErrors.pdfFile) {
+        setValidationErrors({
+          ...validationErrors,
+          pdfFile: ''
+        });
+      }
     }
   };
   
@@ -213,7 +233,22 @@ const Tests: React.FC = () => {
     if (!validateForm()) return;
     
     try {
-      const response = await testService.createTest(formData);
+      // Create form data for file upload
+      const formDataObj = new FormData();
+      formDataObj.append('title', formData.title);
+      formDataObj.append('subject', formData.subject);
+      formDataObj.append('description', formData.description);
+      formDataObj.append('totalMarks', formData.totalMarks.toString());
+      formDataObj.append('passingMarks', formData.passingMarks.toString());
+      formDataObj.append('duration', formData.duration.toString());
+      formDataObj.append('class', formData.class.toString());
+      
+      // Add PDF file if it exists
+      if (formData.pdfFile) {
+        formDataObj.append('pdfFile', formData.pdfFile);
+      }
+      
+      const response = await testService.createTestWithPDF(formDataObj);
       
       if (response.success) {
         setSnackbar({
@@ -237,7 +272,22 @@ const Tests: React.FC = () => {
     if (!validateForm() || !currentTest) return;
     
     try {
-      const response = await testService.updateTest(currentTest.id, formData);
+      // Create form data for file upload
+      const formDataObj = new FormData();
+      formDataObj.append('title', formData.title);
+      formDataObj.append('subject', formData.subject);
+      formDataObj.append('description', formData.description);
+      formDataObj.append('totalMarks', formData.totalMarks.toString());
+      formDataObj.append('passingMarks', formData.passingMarks.toString());
+      formDataObj.append('duration', formData.duration.toString());
+      formDataObj.append('class', formData.class.toString());
+      
+      // Add PDF file if it exists
+      if (formData.pdfFile) {
+        formDataObj.append('pdfFile', formData.pdfFile);
+      }
+      
+      const response = await testService.updateTestWithPDF(currentTest.id, formDataObj);
       
       if (response.success) {
         setSnackbar({
@@ -478,6 +528,32 @@ const Tests: React.FC = () => {
                 required
               />
             </Grid>
+            <Grid item xs={12}>
+              <Button
+                variant="outlined"
+                component="label"
+                fullWidth
+                sx={{ mt: 1 }}
+              >
+                {formData.pdfFile ? 'Change PDF File' : 'Upload PDF File'}
+                <input
+                  type="file"
+                  accept=".pdf"
+                  hidden
+                  onChange={handleFileUpload}
+                />
+              </Button>
+              {formData.pdfFile && (
+                <Typography variant="caption" display="block" sx={{ mt: 1 }}>
+                  Selected file: {formData.pdfFile.name}
+                </Typography>
+              )}
+              {validationErrors.pdfFile && (
+                <Typography variant="caption" color="error">
+                  {validationErrors.pdfFile}
+                </Typography>
+              )}
+            </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
@@ -580,6 +656,32 @@ const Tests: React.FC = () => {
                 helperText={validationErrors.duration}
                 required
               />
+            </Grid>
+            <Grid item xs={12}>
+              <Button
+                variant="outlined"
+                component="label"
+                fullWidth
+                sx={{ mt: 1 }}
+              >
+                {formData.pdfFile ? 'Change PDF File' : 'Upload PDF File'}
+                <input
+                  type="file"
+                  accept=".pdf"
+                  hidden
+                  onChange={handleFileUpload}
+                />
+              </Button>
+              {formData.pdfFile && (
+                <Typography variant="caption" display="block" sx={{ mt: 1 }}>
+                  Selected file: {formData.pdfFile.name}
+                </Typography>
+              )}
+              {validationErrors.pdfFile && (
+                <Typography variant="caption" color="error">
+                  {validationErrors.pdfFile}
+                </Typography>
+              )}
             </Grid>
           </Grid>
         </DialogContent>

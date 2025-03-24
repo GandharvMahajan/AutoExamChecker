@@ -73,6 +73,21 @@ export const testService = {
     }
   },
 
+  // Create new test with PDF file
+  createTestWithPDF: async (formData: FormData) => {
+    try {
+      const response = await adminApi.post('/tests/with-pdf', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error creating test with PDF:', error);
+      throw error;
+    }
+  },
+
   // Update test
   updateTest: async (id: number, testData: any) => {
     try {
@@ -80,6 +95,21 @@ export const testService = {
       return response.data;
     } catch (error) {
       console.error(`Error updating test ${id}:`, error);
+      throw error;
+    }
+  },
+
+  // Update test with PDF file
+  updateTestWithPDF: async (id: number, formData: FormData) => {
+    try {
+      const response = await adminApi.put(`/tests/${id}/with-pdf`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating test ${id} with PDF:`, error);
       throw error;
     }
   },

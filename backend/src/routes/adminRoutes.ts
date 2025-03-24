@@ -2,12 +2,47 @@ import { Router, Request, Response, NextFunction, RequestHandler } from 'express
 import { body, validationResult } from 'express-validator';
 import { PrismaClient } from '@prisma/client';
 import adminAuth from '../middleware/adminAuth';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
 // Create Prisma client
 const prisma = new PrismaClient();
 
 // Create router
 const router = Router();
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, '../../uploads/tests');
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const fileExt = path.extname(file.originalname);
+    cb(null, 'test-' + uniqueSuffix + fileExt);
+  }
+});
+
+// File filter to only allow PDFs
+const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  if (file.mimetype === 'application/pdf') {
+    cb(null, true);
+  } else {
+    cb(new Error('Only PDF files are allowed'));
+  }
+};
+
+const upload = multer({ 
+  storage, 
+  fileFilter,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB file size limit
+});
 
 // Apply middleware to all routes
 router.use(adminAuth as RequestHandler);
@@ -133,6 +168,78 @@ const createTest: RequestHandler = async (req, res) => {
 
 router.post('/tests', createTest);
 
+// Create a new test with PDF
+const createTestWithPDF: RequestHandler = async (req, res) => {
+  try {
+    const { title, subject, description, totalMarks, passingMarks, duration, class: classLevel } = req.body;
+    
+    // Validate input
+    if (!title || !subject || !totalMarks || !passingMarks || !duration || !classLevel) {
+      // If a file was uploaded, delete it
+      if (req.file) {
+        fs.unlinkSync(req.file.path);
+      }
+      
+      res.status(400).json({
+        success: false,
+        message: 'Missing required fields'
+      });
+      return;
+    }
+    
+    // Validate class level
+    const classNum = parseInt(classLevel);
+    if (isNaN(classNum) || classNum < 1 || classNum > 12) {
+      // If a file was uploaded, delete it
+      if (req.file) {
+        fs.unlinkSync(req.file.path);
+      }
+      
+      res.status(400).json({
+        success: false,
+        message: 'Class must be an integer between 1 and 12'
+      });
+      return;
+    }
+    
+    // Get the file URL if a file was uploaded
+    const pdfUrl = req.file ? `/uploads/tests/${path.basename(req.file.path)}` : null;
+    
+    // For now, use any to bypass the Prisma type issues
+    const test = await (prisma.examTest as any).create({
+      data: {
+        title,
+        subject,
+        description: description || null,
+        totalMarks: parseInt(totalMarks),
+        passingMarks: parseInt(passingMarks),
+        duration: parseInt(duration),
+        class: classNum,
+        pdfUrl
+      }
+    });
+    
+    res.status(201).json({
+      success: true,
+      test
+    });
+  } catch (error) {
+    console.error('Error creating test with PDF:', error);
+    
+    // If a file was uploaded, delete it on error
+    if (req.file) {
+      fs.unlinkSync(req.file.path);
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Error creating test'
+    });
+  }
+};
+
+router.post('/tests/with-pdf', upload.single('pdfFile'), createTestWithPDF);
+
 // Update a test
 const updateTest: RequestHandler = async (req, res) => {
   try {
@@ -203,6 +310,113 @@ const updateTest: RequestHandler = async (req, res) => {
 };
 
 router.put('/tests/:id', updateTest);
+
+// Update a test with PDF
+const updateTestWithPDF: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, subject, description, totalMarks, passingMarks, duration, class: classLevel } = req.body;
+    
+    // Validate input
+    if (!title || !subject || !totalMarks || !passingMarks || !duration || !classLevel) {
+      // If a file was uploaded, delete it
+      if (req.file) {
+        fs.unlinkSync(req.file.path);
+      }
+      
+      res.status(400).json({
+        success: false,
+        message: 'Missing required fields'
+      });
+      return;
+    }
+    
+    // Validate class level
+    const classNum = parseInt(classLevel);
+    if (isNaN(classNum) || classNum < 1 || classNum > 12) {
+      // If a file was uploaded, delete it
+      if (req.file) {
+        fs.unlinkSync(req.file.path);
+      }
+      
+      res.status(400).json({
+        success: false,
+        message: 'Class must be an integer between 1 and 12'
+      });
+      return;
+    }
+    
+    // Check if test exists
+    const existingTest = await prisma.examTest.findUnique({
+      where: {
+        id: parseInt(id)
+      }
+    }) as any; // Use type assertion to avoid TypeScript errors
+    
+    if (!existingTest) {
+      // If a file was uploaded, delete it
+      if (req.file) {
+        fs.unlinkSync(req.file.path);
+      }
+      
+      res.status(404).json({
+        success: false,
+        message: 'Test not found'
+      });
+      return;
+    }
+    
+    // If there's an existing PDF and a new one is uploaded, delete the old one
+    if (existingTest.pdfUrl && req.file) {
+      const oldFilePath = path.join(__dirname, '../../', existingTest.pdfUrl);
+      if (fs.existsSync(oldFilePath)) {
+        fs.unlinkSync(oldFilePath);
+      }
+    }
+    
+    // Get the file URL if a file was uploaded
+    let pdfUrl = existingTest.pdfUrl;
+    if (req.file) {
+      pdfUrl = `/uploads/tests/${path.basename(req.file.path)}`;
+    }
+    
+    // Use any to bypass the Prisma type issues
+    const test = await (prisma.examTest as any).update({
+      where: {
+        id: parseInt(id)
+      },
+      data: {
+        title,
+        subject,
+        description: description || null,
+        totalMarks: parseInt(totalMarks),
+        passingMarks: parseInt(passingMarks),
+        duration: parseInt(duration),
+        class: classNum,
+        pdfUrl
+      }
+    });
+    
+    res.status(200).json({
+      success: true,
+      test
+    });
+  } catch (error) {
+    console.error('Error updating test with PDF:', error);
+    
+    // If a file was uploaded, delete it on error
+    if (req.file) {
+      fs.unlinkSync(req.file.path);
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Error updating test'
+    });
+  }
+};
+
+router.put('/tests/:id/with-pdf', upload.single('pdfFile'), updateTestWithPDF);
 
 // Delete a test
 const deleteTest: RequestHandler = async (req, res) => {
