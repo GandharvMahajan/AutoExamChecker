@@ -1,11 +1,37 @@
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Button, Typography, Box, Paper, Grid, Card, CardContent, LinearProgress, CircularProgress, Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Stack, Alert, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent } from '@mui/material';
+import { 
+  Button, 
+  Typography, 
+  Box, 
+  Paper, 
+  Grid, 
+  Card, 
+  CardContent, 
+  LinearProgress, 
+  CircularProgress, 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableContainer, 
+  TableHead, 
+  TableRow, 
+  Stack, 
+  Alert, 
+  FormControl, 
+  InputLabel, 
+  Select, 
+  MenuItem, 
+  SelectChangeEvent,
+  useTheme,
+  alpha
+} from '@mui/material';
 import { Link } from 'react-router-dom';
 import { useCredits } from '../hooks/useCredits';
-import { IS_DEVELOPMENT, API_BASE_URL } from '../config/constants';
+import { API_BASE_URL } from '../config/constants';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { motion } from 'framer-motion';
 
 // Define test interface
 interface Test {
@@ -24,7 +50,30 @@ interface Test {
   maxScore?: number; // Add optional maxScore field
 }
 
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { 
+    opacity: 1,
+    transition: { 
+      when: "beforeChildren",
+      staggerChildren: 0.1,
+      duration: 0.5
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.5, ease: "easeOut" }
+  }
+};
+
 const Dashboard = () => {
+  const theme = useTheme();
   const { user, logout, token, refreshToken } = useAuth();
   const navigate = useNavigate();
   const { testsPurchased, testsUsed, loading: creditsLoading, error: creditsError, refreshCredits } = useCredits();
@@ -40,6 +89,18 @@ const Dashboard = () => {
   // Calculate usage percentage
   const testsRemaining = testsPurchased - testsUsed;
   const usagePercentage = testsPurchased > 0 ? (testsUsed / testsPurchased) * 100 : 0;
+  
+  // Apple-inspired card style
+  const cardStyle = {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+    '&:hover': {
+      transform: 'translateY(-4px)',
+      boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+    }
+  };
   
   // Fetch user tests
   useEffect(() => {
@@ -168,269 +229,449 @@ const Dashboard = () => {
     navigate(`/test/${testId}`);
   };
   
-  // Helper function to get status chip color
-  const getStatusColor = (status: string) => {
-    switch(status) {
-      case 'NotStarted': return 'default';
-      case 'InProgress': return 'warning';
-      case 'Completed': return 'success';
-      default: return 'default';
-    }
-  };
+  // Apple-styled button
+  const StyledButton = ({ children, ...props }: any) => (
+    <Button
+      {...props}
+      sx={{
+        borderRadius: '10px',
+        textTransform: 'none',
+        fontWeight: 500,
+        boxShadow: 'none',
+        transition: 'all 0.2s ease',
+        '&:hover': {
+          transform: 'scale(1.02)',
+          boxShadow: '0 5px 15px rgba(0, 0, 0, 0.08)',
+        },
+        ...props.sx
+      }}
+    >
+      {children}
+    </Button>
+  );
   
   return (
-    <Box sx={{ p: 4, maxWidth: "1200px", mx: "auto" }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-        <Box>
-          <Typography variant="h4" component="h1">Dashboard</Typography>
-          {IS_DEVELOPMENT && (
-            <Chip 
-              label="Development Mode" 
-              color="warning" 
-              size="small" 
-              sx={{ mt: 1 }}
-            />
-          )}
-        </Box>
-        <Button variant="contained" color="secondary" onClick={handleLogout}>
-          Logout
-        </Button>
-      </Box>
-      
-      <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h5" gutterBottom>Welcome, {user?.name}!</Typography>
-        <Typography variant="body1">Email: {user?.email}</Typography>
-      </Paper>
-      
-      <Grid container spacing={4} mb={4}>
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Box display="flex" justifyContent="space-between" alignItems="center">
-                <Typography variant="h6" gutterBottom>Test Credits</Typography>
-                {creditsLoading ? (
-                  <CircularProgress size={20} />
-                ) : (
-                  <Button size="small" onClick={() => refreshCredits()}>Refresh</Button>
-                )}
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
+      <Box sx={{ 
+        p: { xs: 2, md: 4 }, 
+        maxWidth: "1200px", 
+        mx: "auto",
+        overflowX: 'hidden',
+        backgroundColor: alpha(theme.palette.background.default, 0.6)
+      }}>
+        <motion.div variants={itemVariants}>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+            <Box>
+              <Typography 
+                variant="h4" 
+                component="h1" 
+                sx={{ 
+                  fontWeight: 600, 
+                  letterSpacing: '-0.5px',
+                  fontSize: { xs: '1.8rem', md: '2.2rem' }
+                }}
+              >
+                Dashboard
+              </Typography>
+            </Box>
+            <StyledButton 
+              variant="outlined" 
+              color="primary" 
+              onClick={handleLogout}
+              sx={{ px: 3 }}
+            >
+              Logout
+            </StyledButton>
+          </Box>
+        </motion.div>
+        
+        <motion.div variants={itemVariants}>
+          <Paper 
+            elevation={0} 
+            sx={{ 
+              p: 3, 
+              mb: 4, 
+              borderRadius: 4,
+              background: `linear-gradient(135deg, ${alpha(theme.palette.primary.light, 0.1)} 0%, ${alpha(theme.palette.primary.main, 0.05)} 100%)`,
+              backdropFilter: 'blur(10px)',
+              border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`
+            }}
+          >
+            <Typography 
+              variant="h5" 
+              gutterBottom 
+              sx={{ 
+                fontWeight: 500, 
+                color: theme.palette.primary.main 
+              }}
+            >
+              Welcome, {user?.name}!
+            </Typography>
+            <Typography variant="body1" sx={{ opacity: 0.8 }}>
+              Email: {user?.email}
+            </Typography>
+          </Paper>
+        </motion.div>
+        
+        <motion.div variants={itemVariants}>
+          <Grid container spacing={4} mb={4}>
+            <Grid item xs={12}>
+              <Card elevation={0} sx={cardStyle}>
+                <CardContent sx={{ p: 3 }}>
+                  <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <Typography 
+                      variant="h6" 
+                      gutterBottom 
+                      sx={{ 
+                        fontWeight: 500, 
+                        letterSpacing: '-0.3px' 
+                      }}
+                    >
+                      Test Credits
+                    </Typography>
+                    {creditsLoading ? (
+                      <CircularProgress size={20} sx={{ color: theme.palette.primary.main }} />
+                    ) : (
+                      <StyledButton 
+                        size="small" 
+                        variant="text" 
+                        onClick={() => refreshCredits()}
+                        sx={{ minWidth: 'auto' }}
+                      >
+                        Refresh
+                      </StyledButton>
+                    )}
+                  </Box>
+                  
+                  {creditsError && (
+                    <Typography color="error" variant="body2" sx={{ mb: 2 }}>{creditsError}</Typography>
+                  )}
+                  
+                  <Box sx={{ mb: 3, mt: 2 }}>
+                    <Box display="flex" justifyContent="space-between" mb={1}>
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          fontWeight: 500, 
+                          color: alpha(theme.palette.text.primary, 0.7) 
+                        }}
+                      >
+                        {testsUsed} used of {testsPurchased} total
+                      </Typography>
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          fontWeight: 600, 
+                          color: theme.palette.primary.main 
+                        }}
+                      >
+                        {testsRemaining} remaining
+                      </Typography>
+                    </Box>
+                    <LinearProgress 
+                      variant="determinate" 
+                      value={usagePercentage} 
+                      sx={{ 
+                        mt: 1, 
+                        height: 12, 
+                        borderRadius: 6,
+                        backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                        '.MuiLinearProgress-bar': {
+                          backgroundColor: theme.palette.primary.main,
+                          borderRadius: 6,
+                          transition: 'transform 1s cubic-bezier(0.23, 1, 0.32, 1)'
+                        }
+                      }}
+                    />
+                  </Box>
+                  {testsPurchased === 0 && (
+                    <Box mt={2}>
+                      <Typography variant="body2" sx={{ color: alpha(theme.palette.text.primary, 0.6), mb: 2 }}>
+                        You don't have any test credits yet.
+                      </Typography>
+                      <StyledButton 
+                        component={Link} 
+                        to="/pricing" 
+                        variant="contained" 
+                        color="primary"
+                        size="small"
+                        sx={{ px: 3, py: 1 }}
+                      >
+                        Purchase Credits
+                      </StyledButton>
+                    </Box>
+                  )}
+                  {testsRemaining <= 2 && testsPurchased > 0 && (
+                    <Box mt={2}>
+                      <Typography variant="body2" color="warning.main" sx={{ mb: 2, fontWeight: 500 }}>
+                        You're running low on test credits!
+                      </Typography>
+                      <StyledButton 
+                        component={Link} 
+                        to="/pricing" 
+                        variant="contained" 
+                        color="primary"
+                        size="small"
+                        sx={{ px: 3, py: 1 }}
+                      >
+                        Buy More Credits
+                      </StyledButton>
+                    </Box>
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        </motion.div>
+        
+        {error && (
+          <motion.div variants={itemVariants}>
+            <Alert 
+              severity="error" 
+              sx={{ 
+                mb: 4, 
+                borderRadius: 2,
+                border: `1px solid ${alpha(theme.palette.error.main, 0.2)}`
+              }}
+            >
+              {error}
+            </Alert>
+          </motion.div>
+        )}
+        
+        <motion.div variants={itemVariants}>
+          <Paper 
+            elevation={0} 
+            sx={{ 
+              p: 3, 
+              borderRadius: 4,
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.06)',
+              border: `1px solid ${alpha('#000', 0.05)}`
+            }}
+          >
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+              <Typography 
+                variant="h6" 
+                sx={{ 
+                  fontWeight: 500, 
+                  letterSpacing: '-0.3px' 
+                }}
+              >
+                Available Tests
+              </Typography>
+              <Box>
+                <StyledButton 
+                  size="small" 
+                  variant="text" 
+                  color="primary" 
+                  onClick={() => window.location.reload()}
+                >
+                  Refresh
+                </StyledButton>
               </Box>
+            </Box>
+            
+            {/* Filters */}
+            <Box 
+              display="flex" 
+              gap={2} 
+              mb={3} 
+              sx={{ 
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'stretch', sm: 'center' }
+              }}
+            >
+              <FormControl 
+                size="small" 
+                sx={{ 
+                  minWidth: 200,
+                  '.MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    transition: 'all 0.2s',
+                    '&.Mui-focused': {
+                      boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.2)}`
+                    }
+                  }
+                }}
+              >
+                <InputLabel id="subject-filter-label">Filter by Subject</InputLabel>
+                <Select
+                  labelId="subject-filter-label"
+                  id="subject-filter"
+                  value={subjectFilter}
+                  label="Filter by Subject"
+                  onChange={handleSubjectFilterChange}
+                >
+                  <MenuItem value="">
+                    <em>All Subjects</em>
+                  </MenuItem>
+                  {availableSubjects.map(subject => (
+                    <MenuItem key={subject} value={subject}>{subject}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
               
-              {creditsError && (
-                <Typography color="error" variant="body2" sx={{ mb: 2 }}>{creditsError}</Typography>
+              <FormControl 
+                size="small" 
+                sx={{ 
+                  minWidth: 200,
+                  '.MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    transition: 'all 0.2s',
+                    '&.Mui-focused': {
+                      boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.2)}`
+                    }
+                  }
+                }}
+              >
+                <InputLabel id="class-filter-label">Filter by Class</InputLabel>
+                <Select
+                  labelId="class-filter-label"
+                  id="class-filter"
+                  value={classFilter}
+                  label="Filter by Class"
+                  onChange={handleClassFilterChange}
+                >
+                  <MenuItem value="">
+                    <em>All Classes</em>
+                  </MenuItem>
+                  {availableClasses.map(cls => (
+                    <MenuItem key={cls} value={cls}>{cls}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              
+              {(subjectFilter || classFilter) && (
+                <StyledButton 
+                  size="small"
+                  variant="text"
+                  onClick={clearFilters}
+                >
+                  Clear Filters
+                </StyledButton>
               )}
-              
-              <Box sx={{ mb: 2 }}>
-                <Box display="flex" justifyContent="space-between">
-                  <Typography variant="body2" color="text.secondary">
-                    {testsUsed} used of {testsPurchased} total
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {testsRemaining} remaining
-                  </Typography>
-                </Box>
-                <LinearProgress 
-                  variant="determinate" 
-                  value={usagePercentage} 
-                  sx={{ mt: 1, height: 10, borderRadius: 5 }}
+            </Box>
+            
+            {loading ? (
+              <Box display="flex" justifyContent="center" p={4}>
+                <CircularProgress 
+                  sx={{ 
+                    color: theme.palette.primary.main
+                  }} 
                 />
               </Box>
-              {testsPurchased === 0 && (
-                <Box mt={2}>
-                  <Typography variant="body2" color="text.secondary" paragraph>
-                    You don't have any test credits yet.
-                  </Typography>
-                  <Button 
-                    component={Link} 
-                    to="/pricing" 
-                    variant="contained" 
-                    color="primary"
-                    size="small"
-                  >
-                    Purchase Credits
-                  </Button>
-                </Box>
-              )}
-              {testsRemaining <= 2 && testsPurchased > 0 && (
-                <Box mt={2}>
-                  <Typography variant="body2" color="warning.main" paragraph>
-                    You're running low on test credits!
-                  </Typography>
-                  <Button 
-                    component={Link} 
-                    to="/pricing" 
-                    variant="contained" 
-                    color="primary"
-                    size="small"
-                  >
-                    Buy More Credits
-                  </Button>
-                </Box>
-              )}
-              
-              {IS_DEVELOPMENT && (
-                <Box mt={2} p={1} bgcolor="#f5f5f5" borderRadius={1}>
-                  <Typography variant="caption" color="text.secondary">
-                    Development Mode: Credit values are simulated and no real payments are processed.
-                  </Typography>
-                </Box>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-        
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>Auto Exam Checker</Typography>
-              <Typography variant="body2" paragraph>
-                Use your test credits to automatically check and grade exam papers.
-              </Typography>
-              <Button 
-                variant="contained" 
-                color="primary"
-                disabled={testsRemaining <= 0}
-                component={Link}
-                to="/tests"
+            ) : filteredTests.length > 0 ? (
+              <TableContainer sx={{ 
+                borderRadius: 2, 
+                overflow: 'hidden',
+                border: `1px solid ${alpha('#000', 0.05)}`,
+                '& .MuiTableCell-root': {
+                  borderColor: alpha('#000', 0.05)
+                }
+              }}>
+                <Table>
+                  <TableHead>
+                    <TableRow sx={{ backgroundColor: alpha(theme.palette.primary.main, 0.03) }}>
+                      <TableCell sx={{ fontWeight: 600 }}>Test Name</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Subject</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Class</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Maximum Score</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {filteredTests.map((test) => (
+                      <TableRow 
+                        key={test.id}
+                        sx={{ 
+                          transition: 'background-color 0.2s',
+                          '&:hover': {
+                            backgroundColor: alpha(theme.palette.primary.main, 0.03)
+                          }
+                        }}
+                      >
+                        <TableCell>{test.title}</TableCell>
+                        <TableCell>{test.subject}</TableCell>
+                        <TableCell>
+                          {/* Always display a class value, even if it's 0 */}
+                          {test.userClass !== undefined && test.userClass !== null && test.userClass !== '' 
+                            ? test.userClass 
+                            : (test as any).class !== undefined && (test as any).class !== null 
+                              ? String((test as any).class) 
+                              : '0'}
+                        </TableCell>
+                        <TableCell>{test.maxScore || test.totalMarks}</TableCell>
+                        <TableCell>
+                          <Stack direction="row" spacing={1}>
+                            {test.status === 'NotStarted' && (
+                              <StyledButton 
+                                size="small" 
+                                variant="outlined"
+                                onClick={() => handleStartTest(test.id)}
+                                disabled={testsRemaining <= 0}
+                                sx={{ px: 2 }}
+                              >
+                                Start Test
+                              </StyledButton>
+                            )}
+                            {test.status === 'InProgress' && (
+                              <StyledButton 
+                                size="small" 
+                                variant="contained"
+                                color="primary"
+                                onClick={() => navigate(`/test/${test.id}`)}
+                                sx={{ px: 2 }}
+                              >
+                                Continue
+                              </StyledButton>
+                            )}
+                            {test.status === 'Completed' && (
+                              <StyledButton 
+                                size="small" 
+                                variant="outlined"
+                                color="success"
+                                sx={{ px: 2 }}
+                              >
+                                View Results
+                              </StyledButton>
+                            )}
+                          </Stack>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            ) : (
+              <Box 
+                sx={{ 
+                  py: 6, 
+                  px: 3, 
+                  textAlign: 'center',
+                  borderRadius: 2,
+                  backgroundColor: alpha(theme.palette.background.paper, 0.5),
+                  border: `1px solid ${alpha('#000', 0.05)}`
+                }}
               >
-                Check New Exam
-              </Button>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-      
-      {error && (
-        <Alert severity="error" sx={{ mb: 4 }}>{error}</Alert>
-      )}
-      
-      <Paper elevation={3} sx={{ p: 3 }}>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="h6">Available Tests</Typography>
-          <Button size="small" onClick={() => window.location.reload()}>
-            Refresh
-          </Button>
-        </Box>
-        
-        {/* Filters */}
-        <Box display="flex" gap={2} mb={3}>
-          <FormControl size="small" sx={{ minWidth: 200 }}>
-            <InputLabel id="subject-filter-label">Filter by Subject</InputLabel>
-            <Select
-              labelId="subject-filter-label"
-              id="subject-filter"
-              value={subjectFilter}
-              label="Filter by Subject"
-              onChange={handleSubjectFilterChange}
-            >
-              <MenuItem value="">
-                <em>All Subjects</em>
-              </MenuItem>
-              {availableSubjects.map(subject => (
-                <MenuItem key={subject} value={subject}>{subject}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          
-          <FormControl size="small" sx={{ minWidth: 200 }}>
-            <InputLabel id="class-filter-label">Filter by Class</InputLabel>
-            <Select
-              labelId="class-filter-label"
-              id="class-filter"
-              value={classFilter}
-              label="Filter by Class"
-              onChange={handleClassFilterChange}
-            >
-              <MenuItem value="">
-                <em>All Classes</em>
-              </MenuItem>
-              {availableClasses.map(cls => (
-                <MenuItem key={cls} value={cls}>{cls}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          
-          {(subjectFilter || classFilter) && (
-            <Button size="small" onClick={clearFilters}>
-              Clear Filters
-            </Button>
-          )}
-        </Box>
-        
-        {loading ? (
-          <Box display="flex" justifyContent="center" p={3}>
-            <CircularProgress />
-          </Box>
-        ) : filteredTests.length > 0 ? (
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Test Name</TableCell>
-                  <TableCell>Subject</TableCell>
-                  <TableCell>Class</TableCell>
-                  <TableCell>Maximum Score</TableCell>
-                  <TableCell>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredTests.map((test) => (
-                  <TableRow key={test.id}>
-                    <TableCell>{test.title}</TableCell>
-                    <TableCell>{test.subject}</TableCell>
-                    <TableCell>
-                      {/* Always display a class value, even if it's 0 */}
-                      {test.userClass !== undefined && test.userClass !== null && test.userClass !== '' 
-                        ? test.userClass 
-                        : (test as any).class !== undefined && (test as any).class !== null 
-                          ? String((test as any).class) 
-                          : '0'}
-                    </TableCell>
-                    <TableCell>{test.maxScore || test.totalMarks}</TableCell>
-                    <TableCell>
-                      <Stack direction="row" spacing={1}>
-                        {test.status === 'NotStarted' && (
-                          <Button 
-                            size="small" 
-                            variant="outlined"
-                            onClick={() => handleStartTest(test.id)}
-                            disabled={testsRemaining <= 0}
-                          >
-                            Start Test
-                          </Button>
-                        )}
-                        {test.status === 'InProgress' && (
-                          <Button 
-                            size="small" 
-                            variant="contained"
-                            color="primary"
-                            onClick={() => navigate(`/test/${test.id}`)}
-                          >
-                            Continue
-                          </Button>
-                        )}
-                        {test.status === 'Completed' && (
-                          <Button 
-                            size="small" 
-                            variant="outlined"
-                            color="success"
-                          >
-                            View Results
-                          </Button>
-                        )}
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        ) : (
-          <Typography variant="body2" sx={{ py: 2 }}>
-            {tests.length > 0 ? 'No tests match the selected filters.' : 'No tests available. Please check back later or contact support.'}
-          </Typography>
-        )}
-      </Paper>
-    </Box>
+                <Typography 
+                  variant="body1" 
+                  sx={{ 
+                    color: alpha(theme.palette.text.primary, 0.7),
+                    fontWeight: 500
+                  }}
+                >
+                  {tests.length > 0 ? 'No tests match the selected filters.' : 'No tests available. Please check back later or contact support.'}
+                </Typography>
+              </Box>
+            )}
+          </Paper>
+        </motion.div>
+      </Box>
+    </motion.div>
   );
 };
 
