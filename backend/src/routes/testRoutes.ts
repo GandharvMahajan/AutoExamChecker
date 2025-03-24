@@ -516,6 +516,146 @@ router.post('/:testId/start', auth, async (req: Request, res: Response) => {
   }
 });
 
+// Get test details by ID
+// @ts-ignore
+router.get('/:testId/start', auth, async (req: Request, res: Response) => {
+  try {
+    const { testId } = req.params;
+    console.log(`Getting test details for ID: ${testId}`);
+    
+    const userId = (req as Request & { user?: { userId: number } }).user?.userId;
+
+    if (!userId) {
+      console.log('User not authenticated');
+      res.status(401).json({ success: false, message: 'User not authenticated' });
+      return;
+    }
+
+    // Check if the test exists
+    const test = await prisma.examTest.findUnique({
+      where: { id: Number(testId) }
+    });
+
+    if (!test) {
+      console.log(`Test with ID ${testId} not found`);
+      res.status(404).json({ success: false, message: 'Test not found' });
+      return;
+    }
+    
+    console.log(`Test found: ${test.title}`);
+
+    // Try to find the user test record
+    let userTest = await prisma.userTest.findFirst({
+      where: {
+        userId,
+        testId: Number(testId)
+      }
+    });
+
+    // If no user test record exists or test hasn't been started yet, start the test
+    if (!userTest) {
+      // Check if user has tests available
+      const user = await prisma.user.findUnique({
+        where: { id: userId }
+      });
+
+      if (!user) {
+        console.log(`User with ID ${userId} not found`);
+        res.status(404).json({ success: false, message: 'User not found' });
+        return;
+      }
+
+      if (user.testsUsed >= user.testsPurchased) {
+        console.log(`User ${userId} has no available tests`);
+        res.status(400).json({ 
+          success: false,
+          message: 'No available tests. Please purchase more tests to continue.' 
+        });
+        return;
+      }
+
+      console.log(`Creating new test record for user ${userId}, test ${testId}`);
+      try {
+        // Create a new user test record
+        userTest = await prisma.userTest.create({
+          data: {
+            userId,
+            testId: Number(testId),
+            status: 'InProgress',
+            startedAt: new Date()
+          }
+        });
+
+        // Increment the testsUsed count
+        await prisma.user.update({
+          where: { id: userId },
+          data: {
+            testsUsed: {
+              increment: 1
+            }
+          }
+        });
+      } catch (createError: any) {
+        // Handle potential unique constraint errors
+        console.error(`Error creating test record: ${createError}`);
+        if (createError.code === 'P2002') {
+          // If a duplicate error occurs, try to retrieve the record again
+          userTest = await prisma.userTest.findFirst({
+            where: {
+              userId,
+              testId: Number(testId)
+            }
+          });
+          
+          if (!userTest) {
+            throw new Error('Failed to create or retrieve test record');
+          }
+        } else {
+          throw createError;
+        }
+      }
+    } else if (userTest.status === 'NotStarted') {
+      // Update the test status to InProgress
+      userTest = await prisma.userTest.update({
+        where: { id: userTest.id },
+        data: {
+          status: 'InProgress',
+          startedAt: new Date()
+        }
+      });
+    }
+
+    // Prepare response data
+    const responseData = {
+      success: true,
+      message: 'Test details retrieved successfully',
+      userTest,
+      test: {
+        id: test.id,
+        title: test.title,
+        subject: test.subject,
+        description: test.description,
+        totalMarks: test.totalMarks,
+        passingMarks: test.passingMarks,
+        duration: test.duration,
+        pdfUrl: test.pdfUrl,
+        startTime: userTest?.startedAt || new Date(),
+        status: userTest?.status || 'NotStarted'
+      }
+    };
+    
+    console.log('Sending test details:', JSON.stringify(responseData));
+    res.status(200).json(responseData);
+  } catch (error) {
+    console.error('Error getting test details:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error getting test details',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // @route   POST /api/v1/tests/:testId/upload-answer
 // @desc    Upload PDF answer for a test
 // @access  Private
@@ -564,8 +704,10 @@ router.post('/:testId/upload-answer', auth, answerUpload.single('answerPdf'), as
     }
     
     // Delete previous answer file if it exists
-    if (userTest.answerPdfUrl) {
-      const previousFilePath = path.join(__dirname, '../../', userTest.answerPdfUrl);
+    // Use type assertion to access answerPdfUrl
+    const userTestAny = userTest as any;
+    if (userTestAny.answerPdfUrl) {
+      const previousFilePath = path.join(__dirname, '../../', userTestAny.answerPdfUrl);
       if (fs.existsSync(previousFilePath)) {
         fs.unlinkSync(previousFilePath);
       }
@@ -574,15 +716,14 @@ router.post('/:testId/upload-answer', auth, answerUpload.single('answerPdf'), as
     // Create the URL for the uploaded PDF
     const answerPdfUrl = `/uploads/answers/${path.basename(req.file.path)}`;
     
-    // Update the user test record with the PDF URL
-    // @ts-ignore
+    // Update the user test record with the PDF URL using type assertion
     await prisma.userTest.update({
       where: {
         id: userTest.id
       },
       data: {
-        answerPdfUrl
-      }
+        answerPdfUrl: answerPdfUrl
+      } as any
     });
     
     res.json({ 
