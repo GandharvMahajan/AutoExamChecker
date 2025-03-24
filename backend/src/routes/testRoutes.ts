@@ -813,4 +813,70 @@ router.get('/db-check', async (req: Request, res: Response) => {
   }
 });
 
+// Get test details by ID without starting the test
+// @ts-ignore
+router.get('/:testId', auth, async (req: Request, res: Response) => {
+  try {
+    const { testId } = req.params;
+    console.log(`Getting test information for ID: ${testId} (without starting)`);
+    
+    const userId = (req as Request & { user?: { userId: number } }).user?.userId;
+
+    if (!userId) {
+      console.log('User not authenticated');
+      res.status(401).json({ success: false, message: 'User not authenticated' });
+      return;
+    }
+
+    // Check if the test exists
+    const test = await prisma.examTest.findUnique({
+      where: { id: Number(testId) }
+    });
+
+    if (!test) {
+      console.log(`Test with ID ${testId} not found`);
+      res.status(404).json({ success: false, message: 'Test not found' });
+      return;
+    }
+    
+    console.log(`Test found: ${test.title}`);
+
+    // Get user test status if it exists, but don't modify it
+    const userTest = await prisma.userTest.findFirst({
+      where: {
+        userId,
+        testId: Number(testId)
+      }
+    });
+
+    // Prepare response data
+    const responseData = {
+      success: true,
+      message: 'Test information retrieved successfully',
+      test: {
+        id: test.id,
+        title: test.title,
+        subject: test.subject,
+        description: test.description,
+        totalMarks: test.totalMarks,
+        passingMarks: test.passingMarks,
+        duration: test.duration,
+        pdfUrl: test.pdfUrl,
+        status: userTest?.status || 'NotStarted',
+        startTime: userTest?.startedAt || null
+      }
+    };
+    
+    console.log('Sending test information:', JSON.stringify(responseData));
+    res.status(200).json(responseData);
+  } catch (error) {
+    console.error('Error getting test information:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error getting test information',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 export default router; 

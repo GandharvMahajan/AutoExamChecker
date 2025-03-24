@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { NavbarProvider, useNavbar } from './context/NavbarContext';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
@@ -13,38 +14,44 @@ import AdminRoutesWithProvider from './admin/AdminRoutes';
 import './App.css';
 import './styles/Auth.css';
 
+// Layout component that conditionally renders the navbar
+const MainLayout = () => {
+  const { showNavbar } = useNavbar();
+  
+  return (
+    <>
+      {showNavbar && <Navbar />}
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/pricing" element={<Pricing />} />
+        
+        {/* Protected Routes */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/test/:testId" element={<TestPage />} />
+        </Route>
+      </Routes>
+    </>
+  );
+};
+
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
-          {/* Admin Routes */}
-          <Route path="/admin/*" element={<AdminRoutesWithProvider />} />
-          
-          {/* Public Routes with Navbar */}
-          <Route
-            path="/*"
-            element={
-              <>
-                <Navbar />
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
-                  <Route path="/pricing" element={<Pricing />} />
-                  
-                  {/* Protected Routes */}
-                  <Route element={<ProtectedRoute />}>
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/payment-success" element={<PaymentSuccess />} />
-                    <Route path="/test/:testId" element={<TestPage />} />
-                  </Route>
-                </Routes>
-              </>
-            }
-          />
-        </Routes>
-      </Router>
+      <NavbarProvider>
+        <Router>
+          <Routes>
+            {/* Admin Routes */}
+            <Route path="/admin/*" element={<AdminRoutesWithProvider />} />
+            
+            {/* Public Routes with conditional Navbar */}
+            <Route path="/*" element={<MainLayout />} />
+          </Routes>
+        </Router>
+      </NavbarProvider>
     </AuthProvider>
   );
 }
