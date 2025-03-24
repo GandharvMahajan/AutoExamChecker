@@ -33,10 +33,12 @@ const Home = () => {
   };
 
   return (
-    <Box 
+    <Container maxWidth="lg">
+
+    
+    <Box
       sx={{ 
-        maxWidth: "1200px", 
-        mx: "auto",
+        width: "100%", 
         px: { xs: 2, md: 4 },
         overflowX: 'hidden',
         backgroundColor: isDark 
@@ -235,6 +237,7 @@ const Home = () => {
         </Grid>
       </Box>
     </Box>
+    </Container>
   );
 };
 

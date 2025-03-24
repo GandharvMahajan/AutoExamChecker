@@ -4,6 +4,7 @@ import {
   Button, 
   Typography, 
   Box, 
+  Container,
   Paper, 
   Grid, 
   Card, 
@@ -263,15 +264,16 @@ const Dashboard = () => {
   );
   
   return (
+    <Container maxWidth="lg">
     <motion.div
       initial="hidden"
       animate="visible"
       variants={containerVariants}
     >
+      
       <Box sx={{ 
         p: { xs: 2, md: 4 }, 
-        maxWidth: "1200px", 
-        mx: "auto",
+        width: "100%", 
         overflowX: 'hidden',
         backgroundColor: isDark 
           ? alpha(theme.palette.background.default, 0.4)
@@ -828,7 +830,9 @@ const Dashboard = () => {
           </Paper>
         </motion.div>
       </Box>
+      
     </motion.div>
+    </Container>
   );
 };
 
