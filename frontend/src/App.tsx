@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { NavbarProvider, useNavbar } from './context/NavbarContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { CssBaseline } from '@mui/material';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
@@ -41,17 +43,20 @@ const MainLayout = () => {
 function App() {
   return (
     <AuthProvider>
-      <NavbarProvider>
-        <Router>
-          <Routes>
-            {/* Admin Routes */}
-            <Route path="/admin/*" element={<AdminRoutesWithProvider />} />
-            
-            {/* Public Routes with conditional Navbar */}
-            <Route path="/*" element={<MainLayout />} />
-          </Routes>
-        </Router>
-      </NavbarProvider>
+      <ThemeProvider>
+        <CssBaseline />
+        <NavbarProvider>
+          <Router>
+            <Routes>
+              {/* Admin Routes */}
+              <Route path="/admin/*" element={<AdminRoutesWithProvider />} />
+              
+              {/* Public Routes with conditional Navbar */}
+              <Route path="/*" element={<MainLayout />} />
+            </Routes>
+          </Router>
+        </NavbarProvider>
+      </ThemeProvider>
     </AuthProvider>
   );
 }
